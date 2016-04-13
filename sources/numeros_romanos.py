@@ -137,18 +137,37 @@ class NumerosRomanos:
 
 
 if __name__ == '__main__':
-    # conversão de inteiro para número romano
-    n = 523
-    r = NumerosRomanos(n)
-    print("{}: {}".format(n, r.romano))
-    # r = NumerosRomanos()
-    # print(r.converter_romano(n))
+    while(True):
+        print("Conversor de numero arábico para Romano")
+        opc = int(input("1 - Converter\n"
+                        "2 - Listagem\n"
+                        "0 - Sair\n"
+                        "\t: "))
 
+        if opc == 1:
+            # conversão de inteiro para número romano
+            n = int(input("Digite um número: "))
 
-    # lista de números romanos; i, f == inicial, final
-    i, f = 0, 0
-    if (i + f) > 0:
-        for r in r.listar(i, f):
-            print(i, ": ", r, "; ", sep="", end="")
-            i += 1
+            r = NumerosRomanos(n)
+            print("{}: {}".format(n, r.romano))
+            # r = NumerosRomanos()
+            # print(r.converter_romano(n))
+        elif opc == 2:
+            # lista de números romanos; i, f == inicial, final
+            i = int(input("Número inicial: "))
+            f = int(input("Número Final: "))
 
+            if i > f:
+                i, f = f, i
+
+            r = NumerosRomanos()
+            if (i + f) > 0:
+                for r in r.listar(i, f):
+                    print(i, ": ", r, "; ", sep="", end="")
+                    i += 1
+        elif opc == 0:
+            break
+
+        input("\n\nEnter para continuar ")
+
+        print("\n")
