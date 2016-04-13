@@ -7,10 +7,12 @@ class NumerosRomanos:
     def __init__(self, numero=None):
         """ Construtor da classe.
             :param numero é opcional, quando informado armazena no atributo romano
-            o número informado convertido.
+            o número informado convertido. Caso seja criado uma instância sem
+            parametro, deve-se usar o método converter_romano(Numero),
+            que retorna um string representando um algarismo romano.
             Na configuração original, o programa aceita converter
             números de 1 à 3999, podendo-se extender sua funcionalidade
-            atribuindo valores no dicionário. """
+            atribuindo chaves e valores ao dicionário. """
         self.__dic = OrderedDict()
         self.__dic[1] = 'I'
         self.__dic[5] = 'V'
@@ -19,6 +21,7 @@ class NumerosRomanos:
         self.__dic[100] = 'C'
         self.__dic[500] = 'D'
         self.__dic[1000] = 'M'
+
         self.romano = ''
 
         if isinstance(numero, int):
@@ -79,9 +82,10 @@ class NumerosRomanos:
                 return self.__dic[self.__item_anterior_posterior(n)[0]] +\
                        self.__dic[self.__item_anterior_posterior(n)[1]]
             elif '6' in str(n) or '7' in str(n) or '8' in str(n):
-                """ O calculo de temp resulta no número inicial de uma parte específica do dicionário de simbolos romanos
-                    Ex: n == 600, temp == 100, o primeiro item do intervalo entre 100 e 1000, do qual 600 pertence.
-                    As próximas 4 linhas atribuindo valor em temp estão em forma didática, no elif '9' está na forma resumida. """
+                # O calculo de temp resulta no número inicial de uma parte específica do dicionário de simbolos romanos
+                # Ex: n == 600, temp == 100, o primeiro item do intervalo entre 100 e 1000, do qual 600 pertence.
+                # As próximas 4 linhas atribuindo valor em temp estão em forma didática,
+                # no elif '9' está na forma resumida. """
                 temp = self.__item_anterior_posterior(n)[0]
                 temp = str(temp)[0]
                 temp = int(temp)
@@ -137,6 +141,7 @@ class NumerosRomanos:
 
 
 if __name__ == '__main__':
+    # Teste em interface de texto.
     while(True):
         print("Conversor de numero arábico para Romano")
         opc = int(input("1 - Converter\n"
@@ -150,6 +155,9 @@ if __name__ == '__main__':
 
             r = NumerosRomanos(n)
             print("{}: {}".format(n, r.romano))
+            # A forma acima demonstra a criação de um novo objeto
+            # passando um número como parametro.
+            # Abaixo está expressado a forma de uso sem a passagem de parametro.
             # r = NumerosRomanos()
             # print(r.converter_romano(n))
         elif opc == 2:
@@ -163,7 +171,7 @@ if __name__ == '__main__':
             r = NumerosRomanos()
             if (i + f) > 0:
                 for r in r.listar(i, f):
-                    print(i, ": ", r, "; ", sep="", end="")
+                    print("{}: {}; ".format(i, r), sep="", end="")
                     i += 1
         elif opc == 0:
             break
