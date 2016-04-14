@@ -13,94 +13,94 @@ class NumerosRomanos:
             Na configuração original, o programa aceita converter
             números de 1 à 3999, podendo-se extender sua funcionalidade
             atribuindo chaves e valores ao dicionário. """
-        self.__dic = OrderedDict()
-        self.__dic[1] = 'I'
-        self.__dic[5] = 'V'
-        self.__dic[10] = 'X'
-        self.__dic[50] = 'L'
-        self.__dic[100] = 'C'
-        self.__dic[500] = 'D'
-        self.__dic[1000] = 'M'
+        self._dic = OrderedDict()
+        self._dic[1] = 'I'
+        self._dic[5] = 'V'
+        self._dic[10] = 'X'
+        self._dic[50] = 'L'
+        self._dic[100] = 'C'
+        self._dic[500] = 'D'
+        self._dic[1000] = 'M'
 
         self.romano = ''
 
         if isinstance(numero, int):
             self.romano = self.converter_romano(numero)
 
-    def converter_romano(self, n) -> object:
+    def converter_romano(self, n):
         """Método para conversão de número arábico em romano. """
-        if n in self.__dic.keys():
-            return self.__dic[n]
+        if n in self._dic.keys():
+            return self._dic[n]
         else:
             temp = ''
             for i in self.separador_casas_decimais(n):
-                if i in self.__dic.keys():
-                    temp += self.__dic[i]
+                if i in self._dic.keys():
+                    temp += self._dic[i]
                 else:
                     # função depreciada
-                    # temp += self.__identificador(i)
-                    temp += self.__identificador2(i)
+                    # temp += self._identificador(i)
+                    temp += self._identificador2(i)
             return temp
 
-    # função depreciada, substituida por __identificador2
-    def __identificador(self, n):
+    # função depreciada, substituida por _identificador2
+    def _identificador(self, n):
         """ Depreciada.
             Método original para identificar símbolo romano a partir de equivalente arábico(n). """
         if 2 <= n <= 3:
-            return n * self.__dic[1]
+            return n * self._dic[1]
         elif n == 4:
-            return self.__dic[1] + self.__dic[5]
+            return self._dic[1] + self._dic[5]
         elif 6 <= n <= 8:
-            return self.__dic[5] + ((n - 5) * self.__dic[1])
+            return self._dic[5] + ((n - 5) * self._dic[1])
         elif n == 9:
-            return self.__dic[1] + self.__dic[10]
+            return self._dic[1] + self._dic[10]
         elif 20 <= n <= 30:
-            return (n // 10) * self.__dic[10]
+            return (n // 10) * self._dic[10]
         elif n == 40:
-            return self.__dic[10] + self.__dic[50]
+            return self._dic[10] + self._dic[50]
         elif 60 <= n <= 80:
-            return self.__dic[50] + (((n - 50) // 10) * self.__dic[10])
+            return self._dic[50] + (((n - 50) // 10) * self._dic[10])
         elif n == 90:
-            return self.__dic[10] + self.__dic[100]
+            return self._dic[10] + self._dic[100]
         elif 200 <= n <= 300:
-            return (n // 100) * self.__dic[100]
+            return (n // 100) * self._dic[100]
         elif n == 400:
-            return self.__dic[100] + self.__dic[500]
+            return self._dic[100] + self._dic[500]
         elif 600 <= n <= 800:
-            return self.__dic[500] + (((n - 500) // 100) * self.__dic[100])
+            return self._dic[500] + (((n - 500) // 100) * self._dic[100])
         elif n == 900:
-            return self.__dic[100] + self.__dic[1000]
+            return self._dic[100] + self._dic[1000]
         else:
             return 'Não cadastrado'
 
-    def __identificador2(self, n):
+    def _identificador2(self, n):
         """ Método otimizado e generalizado para identificar simbolo romano a partir de equivalente arábico(n). """
         try:
             if '2' in str(n) or '3' in str(n):
-                return (n // self.__item_anterior_posterior(n)[0]) * self.__dic[self.__item_anterior_posterior(n)[0]]
+                return (n // self._item_anterior_posterior(n)[0]) * self._dic[self._item_anterior_posterior(n)[0]]
             elif '4' in str(n):
-                return self.__dic[self.__item_anterior_posterior(n)[0]] +\
-                       self.__dic[self.__item_anterior_posterior(n)[1]]
+                return self._dic[self._item_anterior_posterior(n)[0]] +\
+                       self._dic[self._item_anterior_posterior(n)[1]]
             elif '6' in str(n) or '7' in str(n) or '8' in str(n):
                 # O calculo de temp resulta no número inicial de uma parte específica do dicionário de simbolos romanos
                 # Ex: n == 600, temp == 100, o primeiro item do intervalo entre 100 e 1000, do qual 600 pertence.
                 # As próximas 4 linhas atribuindo valor em temp estão em forma didática,
                 # no elif '9' está na forma resumida. """
-                temp = self.__item_anterior_posterior(n)[0]
+                temp = self._item_anterior_posterior(n)[0]
                 temp = str(temp)[0]
                 temp = int(temp)
-                temp = self.__item_anterior_posterior(n)[0] // temp
-                return self.__dic[self.__item_anterior_posterior(n)[0]] +\
-                    (((n - self.__item_anterior_posterior(n)[0]) // temp) * self.__dic[temp])
+                temp = self._item_anterior_posterior(n)[0] // temp
+                return self._dic[self._item_anterior_posterior(n)[0]] +\
+                    (((n - self._item_anterior_posterior(n)[0]) // temp) * self._dic[temp])
             elif '9' in str(n):
-                temp = self.__item_anterior_posterior(n)[0] // (int(str(self.__item_anterior_posterior(n)[0])[0]))
-                return self.__dic[temp] + self.__dic[self.__item_anterior_posterior(n)[1]]
+                temp = self._item_anterior_posterior(n)[0] // (int(str(self._item_anterior_posterior(n)[0])[0]))
+                return self._dic[temp] + self._dic[self._item_anterior_posterior(n)[1]]
         except KeyError:
             return 'Não cadastrado'
 
     def exibir_dicionario(self):
         """ Retorna o dicionário de símbolos romanos com seus respectivos equivalentes arábicos. """
-        return self.__dic
+        return self._dic
 
     def separador_casas_decimais(self, n):
         """ Converte um número em uma lista contendo as casas decimais(...centena, dezena, unidade),
@@ -115,12 +115,13 @@ class NumerosRomanos:
 
         return lista
 
-    def __item_anterior_posterior(self, n):
+    def _item_anterior_posterior(self, n):
         """ Retorna os itens anterior e posterior ao informado(n) em uma lista de 2 posições,
             baseados no dicionário de simbolos romanos.
-            __item_anterior_porterior(n)[0] == anterior
-            __item_anterior_porterior(n)[0] == posterior. """
-        lista = [x for x in self.__dic.keys()]
+            _item_anterior_porterior(n)[0] == anterior
+            _item_anterior_porterior(n)[0] == posterior. """
+        lista = [x for x in self._dic.keys()]
+        anterior, posterior = 0, 0
         for i, item in enumerate(lista):
             if n > item:
                 anterior = item
@@ -142,7 +143,8 @@ class NumerosRomanos:
 
 if __name__ == '__main__':
     # Teste em interface de texto.
-    while(True):
+
+    while True:
         print("Conversor de numero arábico para Romano")
         opc = int(input("1 - Converter\n"
                         "2 - Listagem\n"
@@ -176,6 +178,7 @@ if __name__ == '__main__':
         elif opc == 0:
             break
 
-        input("\n\nEnter para continuar ")
+        if opc != 0:
+            input("\n\nEnter para continuar ")
 
         print("\n")
