@@ -45,7 +45,7 @@ class NumerosRomanos:
     # função depreciada, substituida por _identificador2
     def _identificador(self, n):
         """ Depreciada.
-            Método original para identificar símbolo romano a partir de equivalente arábico(n). """
+            Método original para identificar símbolo romano a partir de equivalente arábico(np). """
         if 2 <= n <= 3:
             return n * self._dic[1]
         elif n == 4:
@@ -74,7 +74,7 @@ class NumerosRomanos:
             return 'Não cadastrado'
 
     def _identificador2(self, n):
-        """ Método otimizado e generalizado para identificar simbolo romano a partir de equivalente arábico(n). """
+        """ Método otimizado e generalizado para identificar simbolo romano a partir de equivalente arábico(np). """
         try:
             if '2' in str(n) or '3' in str(n):
                 return (n // self._item_anterior_posterior(n)[0]) * self._dic[self._item_anterior_posterior(n)[0]]
@@ -83,7 +83,7 @@ class NumerosRomanos:
                        self._dic[self._item_anterior_posterior(n)[1]]
             elif '6' in str(n) or '7' in str(n) or '8' in str(n):
                 # O calculo de temp resulta no número inicial de uma parte específica do dicionário de simbolos romanos
-                # Ex: n == 600, temp == 100, o primeiro item do intervalo entre 100 e 1000, do qual 600 pertence.
+                # Ex: np == 600, temp == 100, o primeiro item do intervalo entre 100 e 1000, do qual 600 pertence.
                 # As próximas 4 linhas atribuindo valor em temp estão em forma didática,
                 # no elif '9' está na forma resumida. """
                 temp = self._item_anterior_posterior(n)[0]
@@ -116,10 +116,10 @@ class NumerosRomanos:
         return lista
 
     def _item_anterior_posterior(self, n):
-        """ Retorna os itens anterior e posterior ao informado(n) em uma lista de 2 posições,
+        """ Retorna os itens anterior e posterior ao informado(np) em uma lista de 2 posições,
             baseados no dicionário de simbolos romanos.
-            _item_anterior_porterior(n)[0] == anterior
-            _item_anterior_porterior(n)[0] == posterior. """
+            _item_anterior_porterior(np)[0] == anterior
+            _item_anterior_porterior(np)[0] == posterior. """
         lista = [x for x in self._dic.keys()]
         anterior, posterior = 0, 0
         for i, item in enumerate(lista):
@@ -153,7 +153,7 @@ if __name__ == '__main__':
 
         if opc == 1:
             # conversão de inteiro para número romano
-            n = int(input("Digite um número: "))
+            n = int(input("\nDigite um número: "))
 
             r = NumerosRomanos(n)
             print("{}: {}".format(n, r.romano))
@@ -161,10 +161,10 @@ if __name__ == '__main__':
             # passando um número como parametro.
             # Abaixo está expressado a forma de uso sem a passagem de parametro.
             # r = NumerosRomanos()
-            # print(r.converter_romano(n))
+            # print(r.converter_romano(np))
         elif opc == 2:
             # lista de números romanos; i, f == inicial, final
-            i = int(input("Número inicial: "))
+            i = int(input("\nNúmero inicial: "))
             f = int(input("Número Final: "))
 
             if i > f:
