@@ -4,6 +4,9 @@
 
 class NumeroPrimo:
     """ Classe para verificação e geração de números primos. """
+    def __init__(self):
+        self._conjunto = self.lista_numeros_primos(1, 100)
+
     def eh_numero_primo(self, n):
         """ Verifica se o parametro informado é um número primo. """
         assert isinstance(n, int), "Param. n não é inteiro."
@@ -45,6 +48,10 @@ class NumeroPrimo:
             if self.eh_numero_primo(cont):
                 yield cont
 
+    def __repr__(self):
+        conj = str(self._conjunto)[1:-1]
+        return "{" + conj + "}"
+
 
 if __name__ == "__main__":
     # Teste em interface de texto.
@@ -53,6 +60,7 @@ if __name__ == "__main__":
         opc = int(input("1 - Verificar\n"
                         "2 - Listar\n"
                         "3 - Gerador infinito\n"
+                        "4 - Conjunto\n"
                         "0 - Sair\n"
                         "\t: "))
 
@@ -80,6 +88,8 @@ if __name__ == "__main__":
                     v = next(g)
                     print("{}:{}".format(cont, v))
                     cont += 1
+        elif opc == 4:
+            print(np)
         else:
             break
 

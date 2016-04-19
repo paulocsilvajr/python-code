@@ -79,7 +79,7 @@ class NumerosRomanos:
             if '2' in str(n) or '3' in str(n):
                 return (n // self._item_anterior_posterior(n)[0]) * self._dic[self._item_anterior_posterior(n)[0]]
             elif '4' in str(n):
-                return self._dic[self._item_anterior_posterior(n)[0]] +\
+                return self._dic[self._item_anterior_posterior(n)[0]] + \
                        self._dic[self._item_anterior_posterior(n)[1]]
             elif '6' in str(n) or '7' in str(n) or '8' in str(n):
                 # O calculo de temp resulta no número inicial de uma parte específica do dicionário de simbolos romanos
@@ -90,8 +90,8 @@ class NumerosRomanos:
                 temp = str(temp)[0]
                 temp = int(temp)
                 temp = self._item_anterior_posterior(n)[0] // temp
-                return self._dic[self._item_anterior_posterior(n)[0]] +\
-                    (((n - self._item_anterior_posterior(n)[0]) // temp) * self._dic[temp])
+                return self._dic[self._item_anterior_posterior(n)[0]] + \
+                       (((n - self._item_anterior_posterior(n)[0]) // temp) * self._dic[temp])
             elif '9' in str(n):
                 temp = self._item_anterior_posterior(n)[0] // (int(str(self._item_anterior_posterior(n)[0])[0]))
                 return self._dic[temp] + self._dic[self._item_anterior_posterior(n)[1]]
