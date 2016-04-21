@@ -50,7 +50,7 @@ class NumeroPrimo:
 
     def __repr__(self):
         conj = str(self._conjunto)[1:-1]
-        return "{" + conj + "}"
+        return "{" + conj + ",...}"
 
 
 if __name__ == "__main__":
