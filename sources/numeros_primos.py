@@ -5,9 +5,10 @@
 class NumeroPrimo:
     """ Classe para verificação e geração de números primos. """
     def __init__(self):
-        self._conjunto = self.lista_numeros_primos(1, 100)
+        self._conjunto = self.listar(1, 100)
 
-    def eh_numero_primo(self, n):
+    @staticmethod
+    def eh_numero_primo(n):
         """ Verifica se o parametro informado é um número primo. """
         assert isinstance(n, int), "Param. n não é inteiro."
         assert n > 0, "Param. n <= 0"
@@ -23,7 +24,7 @@ class NumeroPrimo:
 
         return primo
 
-    def lista_numeros_primos(self, inicial, final):
+    def listar(self, inicial, final):
         """ Retorna uma lista de números primos dentro do intervalo informado(inicial, final). """
         # Verificação para os parametros de entrada, gera excessão caso não atendidas.
         assert isinstance(inicial, int), "Param. inicial não é inteiro"
@@ -40,7 +41,7 @@ class NumeroPrimo:
 
         return lista
 
-    def gerador_numero_primo(self):
+    def gerador(self):
         """ Retorna um generator de números primos. """
         cont = 0
         while True:
@@ -78,10 +79,10 @@ if __name__ == "__main__":
             if t[0] > t[1]:
                 t[0], t[1] = t[1], t[0]
 
-            print(np.lista_numeros_primos(t[0], t[1]), end="\n")
+            print(np.listar(t[0], t[1]), end="\n")
         elif opc == 3:
             if (input("\nCTRL + C, para PARAR.\nContinuar(S/n): ")).upper() == 'S':
-                g = np.gerador_numero_primo()
+                g = np.gerador()
                 cont = 1
                 # Exemplo de aplicação do generator de números primos.
                 while True:
