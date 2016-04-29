@@ -56,6 +56,8 @@ class NumeroPrimo:
 
 if __name__ == "__main__":
     # Teste em interface de texto.
+    np = NumeroPrimo()
+
     while True:
         print("Números primos\n")
         opc = int(input("1 - Verificar\n"
@@ -64,8 +66,6 @@ if __name__ == "__main__":
                         "4 - Conjunto\n"
                         "0 - Sair\n"
                         "\t: "))
-
-        np = NumeroPrimo()
 
         if opc == 1:
             # Verificação de número primo, usando if como operador ternário.
