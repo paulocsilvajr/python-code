@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
 
+__author__ = "Paulo C. Silva Jr."
+
 
 class NumerosRomanos:
     def __init__(self, numero=None):

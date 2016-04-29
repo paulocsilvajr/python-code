@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+__author__ = "Paulo C. Silva Jr."
 
 
 class NumeroPrimo:
