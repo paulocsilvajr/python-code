@@ -8,6 +8,12 @@ sources/numeros_primos: Módulo que implementa uma classe para gerar números pr
 sources/sequencia_fibonacci: Módulo que implementa uma classe para gerar sequência de Fibonacci.
 ```
 
-###License
+###Licença
 
 Licença GPL, arquivo em anexo no repositório.
+
+###Contato
+
+```
+[Paulo Carvalho da Silva Junior](pauluscave@gmail.com)
+```
