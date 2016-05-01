@@ -14,6 +14,4 @@ Licença GPL, arquivo em anexo no repositório.
 
 ###Contato
 
-```
 [Paulo Carvalho da Silva Junior](pauluscave@gmail.com)
-```
