@@ -66,7 +66,7 @@ class Fibonacci:
 
     def __repr__(self):
         """ Impressão do objeto Fibonacci. """
-        if not self._posicao:
+        if self._posicao is None:
             return "{" + self._conjunto + ", ...}"
         else:
             return str(self.gerar_generator(self._posicao))
