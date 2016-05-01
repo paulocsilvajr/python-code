@@ -10,7 +10,7 @@ sources/sequencia_fibonacci: Módulo que implementa uma classe para gerar sequê
 
 ###Licença
 
-Licença GPL, arquivo em anexo no repositório.
+[Licença GPL](https://github.com/paulocsilvajr/python-code/blob/master/license_gpl.txt), arquivo em anexo no repositório.
 
 ###Contato
 
