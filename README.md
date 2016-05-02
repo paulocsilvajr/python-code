@@ -6,6 +6,7 @@ O Objetivo desse repositório é apresentar códigos desenvolvidos em Python exe
 sources/numeros_romanos: Módulo que implementa uma classe para converter números arábicos em romanos.
 sources/numeros_primos: Módulo que implementa uma classe para gerar números primos.
 sources/sequencia_fibonacci: Módulo que implementa uma classe para gerar sequência de Fibonacci.
+sources/funcoes_uteis: Módulo que implementa funções e classes úteis.
 ```
 
 ###Licença
