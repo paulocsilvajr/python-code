@@ -1,4 +1,5 @@
-##Python code - exemplos de código desenvolvidos em Python.
+# Python code
+### Exemplos de códigos desenvolvidos em Python.
 
 O Objetivo desse repositório é apresentar códigos desenvolvidos em Python executando tarefas diversas, procurando usar o conhecimento adquirido no estudo dessa linguagem, proliferando saber pelo compartilhamento. Aberto à correções e melhorias. Obs: Cada módulo contém teste caso seja executado diretamente.
 
