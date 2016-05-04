@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+from funcoes_uteis import input_tipo, validar_intervalo, pausar, limpar_tela
+
 __author__ = "Paulo C. Silva Jr."
 
 
@@ -60,17 +63,19 @@ if __name__ == "__main__":
     np = NumeroPrimo()
 
     while True:
+        limpar_tela()
+
         print("Números primos\n")
-        opc = int(input("1 - Verificar\n"
+        opc = validar_intervalo(input_tipo("1 - Verificar\n"
                         "2 - Listar\n"
                         "3 - Gerador infinito\n"
                         "4 - Conjunto\n"
                         "0 - Sair\n"
-                        "\t: "))
+                        "\t: "), 0, 4)
 
         if opc == 1:
             # Verificação de número primo, usando if como operador ternário.
-            n = int(input("\nDigite um número: "))
+            n = input_tipo("\nDigite um número: ")
             print(n, "é PRIMO\n" if np.eh_numero_primo(n) else "NÃO é primo\n")
         elif opc == 2:
             # Listagem de números primos, de acordo com input do usuário.
@@ -82,7 +87,7 @@ if __name__ == "__main__":
 
             print(np.listar(t[0], t[1]), end="\n")
         elif opc == 3:
-            if (input("\nCTRL + C, para PARAR.\nContinuar(S/n): ")).upper() == 'S':
+            if input_tipo("\nCTRL + C, para PARAR.\nContinuar(S/n): ", tipo='bool'):
                 g = np.gerador()
                 cont = 1
                 # Exemplo de aplicação do generator de números primos.
@@ -96,6 +101,6 @@ if __name__ == "__main__":
             break
 
         if opc != 0:
-            input("\n\nEnter para continuar ")
+            pausar()
 
         print("\n")

@@ -1,10 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import random
-from sys import platform
-from os import system
-
+from random import shuffle
+from os import system, name
 
 __author__ = "Paulo C. Silva Junior"
 
@@ -43,12 +41,17 @@ class Pilha:
             return self._elementos.pop()
         return False
 
-    def ordenar(self):
+    def ordenar(self, reverso=False):
         """ Ordenação de itens homogêneos.
+        Parametro reverso para ordenar lista decrescentemente.
+        Default False(crescente).
         Retorna False caso for heterogênea ou vazia. """
         if self._elementos:
             try:
-                self._elementos.sort()
+                if reverso:
+                    self._elementos.sort(reverse=True)
+                else:
+                    self._elementos.sort()
                 return True
             except TypeError:
                 pass
@@ -65,7 +68,8 @@ class Pilha:
 
 class Fila(Pilha):
     """ FIFO - First In First Out. """
-    def remover(self):
+    # Override
+    def remover(self, metodo=None):
         """ Método para exclusão de itens.
         Remoção do primeiro item incluido.
         Retorna o item removido ou False caso vazia. """
@@ -80,28 +84,61 @@ def pausar(mensagem='\nENTER para continuar '):
             break
 
 
-def input_tipo(texto='\t: ', mensagem='\tValor incorreto', tipo=None):
-    """ Captura entrada do teclado com validação para números inteiros.
-    Uso principalmente em menus. """
+def input_tipo(texto='\t: ', mensagem_erro='\tValor incorreto', tipo='int'):
+    """ Captura entrada do teclado com validação, retorno de acordo com tipo especificado:
+    tipo='int': Validação de inteiro, default, retorno int;
+    tipo='float': Validação de ponto flutuante, returno float;
+    tipo='list': Validação de lista, retorno list;
+    tipo='bool': Validação de booleano, retorno bool;
+    Uso principalmente em menus e em interface de texto. """
     n = 0
     while True:
         n = input('%s' % texto)
         try:
+            # Inteiro
             if tipo == 'int':
                 n = int(n)
+            # Ponto flutuante
             elif tipo == 'float':
                 n = float(n)
+            # Lista
+            elif tipo == 'list':
+                if ', ' in n:
+                    separador = ', '
+                else:
+                    separador = ','
+
+                n = n.split(',')
+                for i, x in enumerate(n):
+                    try:
+                        n[i] = int(x)
+                    except ValueError:
+                        try:
+                            n[i] = float(x)
+                        except ValueError:
+                            n[i] = x
+            # Booleano
+            elif tipo == 'bool':
+                dic = {True: ('yes', 'sim', 'y', 's'),
+                       False: ('not', 'no', 'não', 'n')}
+                if n.lower() in dic[True]:
+                    n = True
+                elif n.lower() in dic[False]:
+                    n = False
+                else:
+                    raise ValueError
             break
         except ValueError:
-            if mensagem:
-                print(mensagem)
+            if mensagem_erro:
+                print(mensagem_erro)
     return n
 
 
-def validar_intervalo(valor, inicio, fim, mensagem='\tValor incorreto', tipo='int'):
-    """ Retorna um valor validado dentro do intervalo heterogêneo informado.
+def validar_intervalo(valor, inicio, fim, mensagem_erro='\tValor incorreto', tipo='int'):
+    """ Retorna um valor validado dentro do intervalo homogêneo e de acordo com tipo informado.
+    Default: tipo='int'.
     Caso informado intervalo inválido, recaptura-se o valor.
-    Uso em menus. """
+    Uso principalmente em menus e em interface de texto. """
     if inicio > fim:
         inicio, fim = fim, inicio
 
@@ -109,7 +146,7 @@ def validar_intervalo(valor, inicio, fim, mensagem='\tValor incorreto', tipo='in
         if inicio <= valor <= fim:
             break
         else:
-            print('%s\n' % mensagem)
+            print('%s\n' % mensagem_erro)
             valor = input_tipo('Informe um novo valor: ', tipo=tipo)
     return valor
 
@@ -121,40 +158,74 @@ def lista_randomica(inicio, fim):
 
     lista = [x for x in range(inicio, fim + 1)]  # list(range(inicio, fim + 1))
 
-    random.shuffle(lista)
+    # Embaralhando a lista gerada acima de acordo com intervalo.
+    shuffle(lista)
 
     return lista
 
 
 def limpar_tela():
     """ Limpa tela de acordo com o sistema operacional. """
-    sist_linux = ('linux',)
-    sist_windowns = ('win32',)
+    sist_linux = ('posix',)
+    sist_windowns = ('nt', 'ce',)
 
-    if platform in sist_linux:
+    if name in sist_linux:
         system('clear')
-    elif platform in sist_windowns:
+    elif name in sist_windowns:
         system('cls')
 
 
 if __name__ == '__main__':
-    limpar_tela()
+    # Teste em interface de texto.
+    while True:
+        limpar_tela()
 
-    p = Pilha(2, 5, 8)
-    p.incluir(3, 8)
-    print("Pilha:", p)
-    print("Removido 2 itens", p.remover(), p.remover(), p, sep='\n')
+        print("Funções e classes úteis\n")
+        opc = validar_intervalo(input_tipo("1 - Pilha\n"
+                                           "2 - Fila\n"
+                                           "3 - Lista aleatória\n"
+                                           "0 - Sair\n"
+                                           "\t: "), 0, 3)
 
-    f = Fila(1, 1, 2)
-    f.incluir(3)
-    print("\nFila:", f)
-    print("Removido 1 item", f.remover(), f, sep='\n')
+        if opc == 1 or opc == 2:
+            if opc == 1:
+                l = Pilha()
+                # Pilha/Fila pode ser inicializada com n elementos.
+                # l = Pilha(2, 5, 8)
+                # l = Fila(1, 1, 2, 3)
+                # Na inclusão pode-se inserir n elementos também.
+                # l.incluir(6, 9, 12)
+            else:
+                l = Fila()
 
-    numero = validar_intervalo(input_tipo(texto='\n\nInforme um número: ', tipo='int'),
-                               input_tipo(texto='Inicial: ', tipo='int'),
-                               input_tipo(texto='final: ', tipo='int'))
-    print('Número validado no intervalo:', numero)
+            while True:
+                limpar_tela()
 
-    print("\n\nLista aleatória")
-    print(">>>", lista_randomica(input_tipo("Inicial: ", tipo='int'),
-                                 input_tipo("Final: ", tipo='int')))
+                opc2 = validar_intervalo(input_tipo("\n1 - Incluir\n"
+                                                    "2 - Remover\n"
+                                                    "3 - Ordenar\n"
+                                                    "4 - Exibir\n"
+                                                    "0 - Voltar\n"
+                                                    "\t: "), 0, 4)
+
+                if opc2 == 1:
+                    n = input_tipo("\nDigite: ")
+                    l.incluir(n)
+                elif opc2 == 2:
+                    print("" if l.remover() else "\nVazia")
+                elif opc2 == 3:
+                    print("" if l.ordenar() else "\nElementos heterogêneos/vazio")
+                elif opc2 == 4:
+                    print("\nPilha: " + str(l) if opc == 1 else "\nFila: " + str(l))
+                    pausar()
+                else:
+                    break
+        elif opc == 3:
+            print("\n\nLista aleatória")
+            print(">>>", lista_randomica(input_tipo("Inicial: "),
+                                         input_tipo("Final: ")))
+        else:
+            break
+
+        if opc != 0 or opc2 == 0:
+            pausar()

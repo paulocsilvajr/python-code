@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+from funcoes_uteis import input_tipo, validar_intervalo, pausar, limpar_tela
+
 __author__ = "Paulo C. Silva Jr."
 
 
@@ -77,28 +80,30 @@ if __name__ == "__main__":
     f = Fibonacci()
 
     while True:
+        limpar_tela()
+
         print("Sequência de Fibonacci\n")
-        opc = int(input("1 - Gerar posição específica\n"
+        opc = validar_intervalo(input_tipo("1 - Gerar posição específica\n"
                         "2 - Listar\n"
                         "3 - Gerador infinito\n"
                         "4 - Conjunto\n"
                         "0 - Sair\n"
-                        "\t: "))
+                        "\t: "), 0, 4)
 
         if opc == 1:
             # Geração de posição informada pelo usuário.
-            posicao = int(input("\nPosição: "))
+            posicao = input_tipo("\nPosição: ")
             # Abaixo exemplo usando método específico e método construtor.
             # print(f.gerar_generator(posicao))
             fibo = Fibonacci(posicao)
             print(fibo)
         elif opc == 2:
             # Listagem usando iteração, recursividade, generetor.
-            opc2 = int(input("\n1 - Iteração"
+            opc2 = validar_intervalo(input_tipo("\n1 - Iteração"
                              "\n2 - Recursão"
                              "\n3 - Gerador(generator)"
                              "\n0 - Voltar"
-                             "\n\t: "))
+                             "\n\t: "), 0, 3)
             if opc2:
                 intervalo = input("\nIntervalo de posições(i,f): ")
                 intervalo = intervalo.split(',')
@@ -116,7 +121,7 @@ if __name__ == "__main__":
                 opc = 0
         elif opc == 3:
             # Gerador infinito usando generator.
-            if (input("\nCTRL + C, para PARAR.\nContinuar(S/n): ")).upper() == 'S':
+            if input_tipo("\nCTRL + C, para PARAR.\nContinuar(S/n): ", tipo='bool'):
                 cont = 0
                 while True:
                     print(cont, ": ", f.gerar_generator(cont), sep="")
@@ -130,7 +135,7 @@ if __name__ == "__main__":
         # Uma variável inteira zerada(==0) é equivalente a False,
         # qualquer outro valor é True.
         if opc:
-            input("\n\nEnter para continuar ")
+            pausar()
 
         print("\n")
 

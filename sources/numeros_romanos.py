@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
 from collections import OrderedDict
+from funcoes_uteis import input_tipo, validar_intervalo, pausar, limpar_tela
 
 __author__ = "Paulo C. Silva Jr."
 
@@ -147,15 +149,16 @@ if __name__ == '__main__':
     # Teste em interface de texto.
 
     while True:
+        limpar_tela()
         print("Conversor de numero arábico para Romano")
-        opc = int(input("1 - Converter\n"
+        opc = validar_intervalo(input_tipo("1 - Converter\n"
                         "2 - Listagem\n"
                         "0 - Sair\n"
-                        "\t: "))
+                        "\t: "), 0, 2)
 
         if opc == 1:
             # conversão de inteiro para número romano
-            n = int(input("\nDigite um número: "))
+            n = input_tipo("\nDigite um número: ")
 
             r = NumerosRomanos(n)
             print("{}: {}".format(n, r.romano))
@@ -166,8 +169,8 @@ if __name__ == '__main__':
             # print(r.converter_romano(np))
         elif opc == 2:
             # lista de números romanos; i, f == inicial, final
-            i = int(input("\nNúmero inicial: "))
-            f = int(input("Número Final: "))
+            i = input_tipo("\nNúmero inicial: ")
+            f = input_tipo("Número Final: ")
 
             if i > f:
                 i, f = f, i
@@ -181,6 +184,6 @@ if __name__ == '__main__':
             break
 
         if opc != 0:
-            input("\n\nEnter para continuar ")
+            pausar()
 
         print("\n")
