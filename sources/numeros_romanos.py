@@ -2,7 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from collections import OrderedDict
-from funcoes_uteis import input_tipo, validar_intervalo, pausar, limpar_tela
+try:
+    # Importação para uso direto do módulo
+    from funcoes_uteis import input_tipo, validar_intervalo, pausar, limpar_tela
+except ImportError:
+    # Importação para uso pelo pacote sources
+    from sources.funcoes_uteis import input_tipo, validar_intervalo, pausar, limpar_tela
 
 __author__ = "Paulo C. Silva Jr."
 
