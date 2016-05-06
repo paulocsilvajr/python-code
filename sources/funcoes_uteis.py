@@ -3,6 +3,7 @@
 
 from random import shuffle
 from os import system, name
+from time import sleep
 
 __author__ = "Paulo C. Silva Junior"
 
@@ -108,7 +109,7 @@ def input_tipo(texto='\t: ', mensagem_erro='\tValor incorreto', tipo='int'):
                 else:
                     separador = ','
 
-                n = n.split(',')
+                n = n.split(separador)
                 for i, x in enumerate(n):
                     try:
                         n[i] = int(x)
@@ -212,7 +213,9 @@ if __name__ == '__main__':
                     n = input_tipo("\nDigite: ")
                     l.incluir(n)
                 elif opc2 == 2:
-                    print("" if l.remover() else "\nVazia")
+                    t = l.remover()
+                    print(("\nRemovido valor: %s" % t) if t else "\nVazia")
+                    sleep(1.5)
                 elif opc2 == 3:
                     print("" if l.ordenar() else "\nElementos heterogêneos/vazio")
                 elif opc2 == 4:
