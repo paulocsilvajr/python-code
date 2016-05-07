@@ -5,7 +5,7 @@ from random import shuffle
 from os import system, name
 from time import sleep
 
-__author__ = "Paulo C. Silva Junior"
+__author__ = "Paulo C. Silva Jr"
 
 """ Módulo com funções e classes úteis para qualquer programa.
    Desenvolvido em Python 3.x """
