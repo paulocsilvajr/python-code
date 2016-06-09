@@ -8,7 +8,7 @@ from time import sleep
 __author__ = "Paulo C. Silva Jr"
 
 """ Módulo com funções e classes úteis para qualquer programa.
-   Desenvolvido em Python 3.x """
+    Desenvolvido em Python 3.x """
 
 
 class Pilha:
