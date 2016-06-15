@@ -8,6 +8,7 @@ sources/numeros_romanos: Módulo que implementa uma classe para converter númer
 sources/numeros_primos: Módulo que implementa uma classe para gerar números primos.
 sources/sequencia_fibonacci: Módulo que implementa uma classe para gerar sequência de Fibonacci.
 sources/funcoes_uteis: Módulo que implementa funções e classes úteis, usado nos módulos e testes do pacote sources.
+sources/juros.py: Módulo que implementa classes para calculo de juros simples e compostos.
 ```
 
 ###Licença

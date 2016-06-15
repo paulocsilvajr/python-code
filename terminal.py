@@ -25,7 +25,7 @@ class Timer(Thread):
             if i < 60:
                 print(i)
             sleep(1)
-            self.relogio = i, i / 60
+            self.relogio = i, round(i / 60, 1)
 
             if self.relogio[1] == 0.0:
                 while True:
