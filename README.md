@@ -9,6 +9,7 @@ sources/numeros_primos: Módulo que implementa uma classe para gerar números pr
 sources/sequencia_fibonacci: Módulo que implementa uma classe para gerar sequência de Fibonacci.
 sources/funcoes_uteis: Módulo que implementa funções e classes úteis, usado nos módulos e testes do pacote sources.
 sources/juros.py: Módulo que implementa classes para calculo de juros simples e compostos.
+sources/conexaoDB.py: Módulo com implementação genérica para gerenciamento de banco de dados(MySQL, PostgreSQL, SQLite)
 ```
 
 ###Licença
