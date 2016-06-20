@@ -3,10 +3,10 @@
 
 try:
     # Importação para uso direto do módulo
-    from funcoes_uteis import Fila, Pilha
+    from funcoes_uteis import Fila, Tabela
 except ImportError:
     # Importação para uso pelo pacote sources
-    from sources.funcoes_uteis import Fila, Pilha
+    from sources.funcoes_uteis import Fila, Tabela
 
 # sudo apt-get install python3-mysql.connector # ou # pip3 install mysql-connector-python
 import mysql.connector
@@ -33,13 +33,14 @@ class Conexao:
             elif dbms == 'postgresql':
                 self._conexao = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'"
                                                  % (dbname, user, host, password))
+            # A implementar
             elif dbms == 'sqlite':
                 self._conexao = sqlite3.connect('%s.db' % dbname)
 
             if self._gerar_historico:
                 self._hist.incluir("Conexão estabelecida com %s" % dbms)
 
-            # no usar dicionário no postgreSQL usar:
+            # Para o cursor na forma de dicionário no postgreSQL usar:
             # self._cursor = self._conexao._cursor(cursor_factory = psycopg2.extras.RealDictCursor)
             self._cursor = self._conexao.cursor()
         except:
@@ -82,18 +83,46 @@ class Conexao:
         self._cursor.execute(dml)
         return self._cursor
 
+    # Criar procedure/function no PostgreSQL para testar
+    def executar_procedure(self, dml="", parametros=""):
+        if self._dbms == 'postgresql':
+            self._cursor.callproc(dml, parametros)
+            return self._cursor
+        return ""
+
+    def mensagem_status(self):
+        if self._dbms == 'postgresql':
+            return self._cursor.statusmessage
+        return ""
+
+    def exibir_dados(self):
+        return self._cursor.fetchall()
+
+    def descricao(self):
+        return self._cursor.description
+
+    def descricao_campos(self):
+        campos = []
+        for i in self._cursor.description:
+            campos.append(i[0])
+
+        return campos
+
+    def quantidade_registros(self):
+        return self._cursor.rowcount
+
+    def exibir_historico(self, ultimo_reg=False):
+        if ultimo_reg:
+            print(self._hist.exibir()[-1:][0])
+        else:
+            for i, e in enumerate(self._hist.exibir()):
+                print("%d: %s" % (i+1, e))
+
     def _historico_crud(self, acao="", tabela="", filtro=""):
         if self._gerar_historico:
             if len(self._hist.exibir()) == self._tamanho_hist:
                 self._hist.remover()
             self._hist.incluir("%s tupla(%s) da tabela %s" % (acao, filtro, tabela))
-
-    def exibir_historico(self, ultimo_reg=False):
-        if ultimo_reg:
-            print(self._hist[-1:])
-        else:
-            for i, e in enumerate(self._hist.exibir()):
-                print("%d: %s" % (i+1, e))
 
     def __del__(self):
         self._conexao.close()
@@ -102,6 +131,7 @@ class Conexao:
 
 
 if __name__ == '__main__':
+    # Recuperando o usuário e a senha em arquivo
     with open('/home/paulo/pc/usuarioSenhaTeste') as f:
         usuario = f.readline()[:-1]  # recortando o \n=caracter de nova linha
         senha = f.readline()[:-1]
@@ -120,16 +150,34 @@ if __name__ == '__main__':
     #               ", " + str(6.35+i) + ",'" + str(2016+i) + "/03/01'")
 
     # DELETE
-    # c.excluir("teste", "id>=140")
+    # c.excluir("teste", "id>5")
 
     # UPDATE
-    # c.atualizar("teste", "texto, numero", "'Paulo', 8", "id=135")
+    # c.atualizar("teste", "texto, numero", "'Paulo', 8", "id>40")
 
     # SELECT
-    for tupla in c.consultar("teste", "*", ordenacao="id"):
-        print(tupla)
+    c.consultar("teste", "*", ordenacao="id")
+    # for i in c.exibir_dados():
+    #     print(i)
 
-    c.exibir_historico()
+    # OU
+    # for tupla in c.consultar("teste", "*", ordenacao="id"):
+    #     print(tupla)
+
+    # Descrições da tabela
+    # print(c.descricao())
+    # print(c.descricao_campos())
+
+    # Mensagens
+    # print(c.quantidade_registros(), "registros")
+    # print(c.mensagem_status())
+
+    # Histórico do objeto Conexao
+    # c.exibir_historico()
+
+    # Impressão dados pela class Tabela
+    t = Tabela(c.exibir_dados(), c.descricao_campos(), titulo_tabela="Tabela Teste")
+    print(t)
 
     # CLOSE CONNECTION
     del c

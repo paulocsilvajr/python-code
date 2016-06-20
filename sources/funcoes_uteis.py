@@ -77,6 +77,63 @@ class Fila(Pilha):
         return super().remover('FIFO')
 
 
+class Tabela:
+    """ Classe para impressão de tabela em modo texto.
+    Métodos:
+        Construtor:
+            Tabela(dados_tabela, titulos_colunas, largura, titulo_tabela)
+            Parametros
+                Obrigatórios: dados_tabela
+                Opcionais: titulo_colunas, largura, titulo """
+
+    def __init__(self, dados_tabela, titulos_colunas=None, largura=0, titulo_tabela=""):
+        # Descobrindo a maior largura para cada coluna do parametro dados_tabela, se não for modificado o valor default.
+        if largura == 0:
+            largura = len(dados_tabela[0]) * [0]
+            for linha in dados_tabela:
+                for i, celula in enumerate(linha):
+                    n = len(celula) + 2 if isinstance(celula, str) \
+                        else len(str(celula)) + 2
+                    if largura[i] < n:
+                        largura[i] = n
+        # Caso o usuário informar um valor de largura, este será usado para todas as colunas da tabela
+        else:
+            largura = len(dados_tabela[0]) * [largura + 2]
+
+        self.__titulo = ""
+        if titulo_tabela:
+            self.__titulo += "|   "
+            self.__titulo += str(titulo_tabela).center(sum(largura) - 1)[:sum(largura) - 1] + "    |"
+
+        self.__linha = "+"
+        for e in largura:
+            self.__linha += (e * "-") + "+"
+
+        # Se o usuário não informar o cabelhado para as colunas será usado a nomenclatura coluna 1, coluna 2...
+        if titulos_colunas is None:
+            self.__cabecalho = "| "
+            for i, e in enumerate(largura):
+                self.__cabecalho += (("Coluna " + str(i + 1)).center(largura[i] - 2)[:largura[i] - 2]) + " | "
+        else:
+            self.__cabecalho = "| "
+            for i, e in enumerate(largura):
+                self.__cabecalho += (str(titulos_colunas[i]).center(largura[i] - 2)[:largura[i] - 2]) + " | "
+
+        self.__corpo = ""
+        for linha in dados_tabela:
+            self.__corpo += "| "
+            for i, celula in enumerate(linha):
+                self.__corpo += str(celula).center(largura[i] - 2)[:largura[i] - 2] + " | "
+            self.__corpo += "\n"
+
+    def __repr__(self):
+        if self.__titulo:
+            return "%s\n%s\n%s\n%s\n%s\n%s%s" % (self.__linha, self.__titulo, self.__linha, self.__cabecalho,
+                                                 self.__linha, self.__corpo, self.__linha)
+        else:
+            return "%s\n%s\n%s\n%s%s" % (self.__linha, self.__cabecalho, self.__linha, self.__corpo, self.__linha)
+
+
 def pausar(mensagem='\nENTER para continuar '):
     while True:
         entrada = input(mensagem)
