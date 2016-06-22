@@ -22,7 +22,7 @@ __author__ = "Paulo C. Silva Jr."
 
 
 class Conexao:
-    def __init__(self, dbms, dbname, user, host, password, historico=True, tamanho_historico=100):
+    def __init__(self, dbms='', dbname='', user='', host='', password='', historico=True, tamanho_historico=100):
         self._dbms = dbms
         self._gerar_historico = historico
         self._tamanho_hist = tamanho_historico
@@ -36,6 +36,8 @@ class Conexao:
             # A implementar
             elif dbms == 'sqlite':
                 self._conexao = sqlite3.connect('%s.db' % dbname)
+            else:
+                raise Exception("Banco de dados(%s) não cadastrado" % dbname)
 
             if self._gerar_historico:
                 self._hist.incluir("Conexão estabelecida com %s" % dbms)
@@ -78,6 +80,10 @@ class Conexao:
             self._conexao.commit()
 
             self._historico_crud("Atualizado", tabela, filtro)
+
+    def criar_tabela(self, nome, campos):
+        self.executar("CREATE TABLE %s(%s)" % (nome, campos))
+        self._conexao.commit()
 
     def executar(self, dml=""):
         self._cursor.execute(dml)
@@ -142,12 +148,16 @@ if __name__ == '__main__':
     c = Conexao('postgresql', 'teste', usuario, '127.0.0.1', senha)
     # MySQL/MariaDB
     # c = Conexao('mysql', 'teste', usuario, '127.0.0.1', senha)
+    # SQLite
+    # c = Conexao('sqlite', 'teste')
 
     # INSERT
     # for i in range(100):
     #     c.inserir("teste", "texto, numero, valor, valor_decimal, data_teste",
     #               "'teste" + str(i) + "', " + str(42+i) + ", " + str(5.25+i) +
     #               ", " + str(6.35+i) + ",'" + str(2016+i) + "/03/01'")
+    # for i in range(10000):
+    #     c.inserir('pessoa', 'nome, data_nascimento', "'Nome%s', '%d/12/05'" % (i, 2000+i))
 
     # DELETE
     # c.excluir("teste", "id>5")
@@ -156,9 +166,12 @@ if __name__ == '__main__':
     # c.atualizar("teste", "texto, numero", "'Paulo', 8", "id>40")
 
     # SELECT
-    c.consultar("teste", "*", ordenacao="id")
+    # c.consultar("teste", "*", ordenacao="id")
     # for i in c.exibir_dados():
     #     print(i)
+    c.consultar("pessoa", "*", filtro="id>=75 and id<=100")
+    t = Tabela(c.exibir_dados(), c.descricao_campos(), titulo_tabela="pessoa")
+    print(t)
 
     # OU
     # for tupla in c.consultar("teste", "*", ordenacao="id"):
@@ -176,8 +189,18 @@ if __name__ == '__main__':
     # c.exibir_historico()
 
     # Impressão dados pela class Tabela
-    t = Tabela(c.exibir_dados(), c.descricao_campos(), titulo_tabela="Tabela Teste")
-    print(t)
+    # t = Tabela(c.exibir_dados(), c.descricao_campos(), titulo_tabela="Tabela Teste")
+    # print(t)
+
+    # CREATE TABLE
+    # SQLite EXAMPLE
+    # c.criar_tabela('pessoa', "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
+    #                          "nome VARCHAR(100) NOT NULL,"
+    #                          "data_nascimento TIMESTAMP")
+    # for i in range(100):
+    #     c.inserir('pessoa', 'nome, data_nascimento', "'Pessoa%s', '2000/02/01'" % i)
+    # for i in c.consultar('pessoa', '*', ordenacao='id, nome'):
+    #     print(i)
 
     # CLOSE CONNECTION
     del c

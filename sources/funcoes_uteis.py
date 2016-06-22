@@ -102,8 +102,8 @@ class Tabela:
 
         self.__titulo = ""
         if titulo_tabela:
-            self.__titulo += "|   "
-            self.__titulo += str(titulo_tabela).center(sum(largura) - 1)[:sum(largura) - 1] + "    |"
+            self.__titulo += "| "
+            self.__titulo += str(titulo_tabela).center(sum(largura))[:sum(largura)] + " |"
 
         self.__linha = "+"
         for e in largura:
