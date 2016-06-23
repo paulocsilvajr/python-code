@@ -87,6 +87,7 @@ class Tabela:
                 Opcionais: titulo_colunas, largura, titulo """
 
     def __init__(self, dados_tabela, titulos_colunas=None, largura=0, titulo_tabela=""):
+        assert isinstance(dados_tabela, list) or isinstance(dados_tabela, tuple), "Formato do parâmetro dados_tabela inválido"
         # Descobrindo a maior largura para cada coluna do parametro dados_tabela, se não for modificado o valor default.
         if largura == 0:
             largura = len(dados_tabela[0]) * [0]
@@ -161,10 +162,7 @@ def input_tipo(texto='\t: ', mensagem_erro='\tValor incorreto', tipo='int'):
                 n = float(n)
             # Lista
             elif tipo == 'list':
-                if ', ' in n:
-                    separador = ', '
-                else:
-                    separador = ','
+                separador = ', ' if ', ' in n else ','
 
                 n = n.split(separador)
                 for i, x in enumerate(n):
