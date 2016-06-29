@@ -4,6 +4,8 @@
 from random import shuffle
 from os import system, name
 from time import sleep
+from threading import Thread
+from datetime import datetime, timedelta
 
 __author__ = "Paulo C. Silva Jr"
 
@@ -62,6 +64,15 @@ class Pilha:
         """ Retorna os item em uma list. """
         return self._elementos
 
+    def __getitem__(self, item):
+        return self._elementos[item] if self._elementos else None
+
+    def __setitem__(self, key, value):
+        self._elementos[key] = value
+
+    def __bool__(self):
+        return bool(self._elementos)
+
     def __repr__(self):
         """ Impressão do objeto em str. """
         return str(self._elementos)
@@ -78,16 +89,17 @@ class Fila(Pilha):
 
 
 class Tabela:
-    """ Classe para impressão de tabela em modo texto.
-    Métodos:
-        Construtor:
-            Tabela(dados_tabela, titulos_colunas, largura, titulo_tabela)
-            Parametros
-                Obrigatórios: dados_tabela
-                Opcionais: titulo_colunas, largura, titulo """
+    """ Classe para impressão de tabela em modo texto. """
 
     def __init__(self, dados_tabela, titulos_colunas=None, largura=0, titulo_tabela=""):
-        assert isinstance(dados_tabela, list) or isinstance(dados_tabela, tuple), "Formato do parâmetro dados_tabela inválido"
+        """ Método construtor e gerador da tabela.
+        :param dados_tabela: tupla ou lista contendo os dados(registros)
+        :param titulos_colunas: tupla ou lista com os títulos das colunas, caso omitido,
+        assume-se nomenclatura padrão: coluna1, col...
+        :param largura: largura, em inteiro, para as colunas. Caso omitido, é assumido o maior registro de cada coluna.
+        :param titulo_tabela: Titulo da tabela, caso omitido, não é exibido. """
+        assert isinstance(dados_tabela, list) or isinstance(dados_tabela, tuple), \
+            "Formato do parâmetro dados_tabela inválido"
         # Descobrindo a maior largura para cada coluna do parametro dados_tabela, se não for modificado o valor default.
         if largura == 0:
             largura = len(dados_tabela[0]) * [0]
@@ -128,11 +140,139 @@ class Tabela:
             self.__corpo += "\n"
 
     def __repr__(self):
+        """ Impressão do objeto coluna.
+        :return: String da tabela elaborado pelo construtor. """
         if self.__titulo:
             return "%s\n%s\n%s\n%s\n%s\n%s%s" % (self.__linha, self.__titulo, self.__linha, self.__cabecalho,
                                                  self.__linha, self.__corpo, self.__linha)
         else:
             return "%s\n%s\n%s\n%s%s" % (self.__linha, self.__cabecalho, self.__linha, self.__corpo, self.__linha)
+
+
+class Temporizador(Thread):
+    def __init__(self, funcao, horario: str = "", **kparametro):
+        """ Temporizador de função em horários definidos. Cada execução da função é feita por uma thread própria.
+        :param funcao: nome da função que será executado nos horários definidos.
+        :param horario: string contendo os horários gatilho.
+        Formatos: hh:mm:ss ou dd/mm/yyyy hh:mm:ss ou +1h ou +1m ou +1s
+        :param kparametro: parametros da função. Deve ser informado nomeparametro=valor, n... """
+        assert isinstance(funcao, object), "Formato do parâmetro funcao inválido"
+        assert isinstance(horario, str), "Formato do parâmetro horario inválido"
+
+        self._lista_horario = Fila()
+        self.funcao = funcao
+        self.kparametro = kparametro
+
+        if horario:
+            self.adicionar_horario(horario)
+        Thread.__init__(self)
+
+    def adicionar_horario(self, horario: str, formato="24hs", completo=False) -> None:
+        """ Inclusão do(s) horário(s) gatilho do temporizador.
+        :param horario: Horario(s). Separador por ',' caso seja informado em plural.
+        :param formato: Definição do formato do horário: AM, PM ou 24hs(default).
+        :param completo: Formato da horário. Caso True o formato deve ser 'dd/mm/yyyy hh:mm:ss', senão, 'hh:mm:ss'.
+        Pode-se omitir os segundos.
+        :return: None. """
+        if "+" in horario:
+            # Validação para execução por acrescimo de tempo(h, m, s)
+            agora = datetime.now()
+            if "h" in horario:
+                n = int(horario.replace("+", "").replace("h", ""))
+                horario = agora + timedelta((1/24)*n)
+            elif "m" in horario:
+                n = int(horario.replace("+", "").replace("m", ""))
+                horario = agora + timedelta(((1/24)/60)*n)
+            elif "s" in horario:
+                n = int(horario.replace("+", "").replace("s", ""))
+                horario = agora + timedelta((((1/24)/60)/60)*n)
+
+            self._lista_horario.incluir(horario)
+        else:
+            for i in converter_string_data(horario, formato, completo):
+                self._lista_horario.incluir(i)
+
+    # Override
+    def run(self):
+        """ Processo principal da thread.
+        :return: None. """
+        while self._lista_horario:
+            sleep(1)
+            agora = datetime.now()
+
+            # print("Esperando...", self._lista_horario[0], "- agora:", agora)
+
+            if agora.year == self._lista_horario[0].year and \
+                    agora.month == self._lista_horario[0].month and \
+                    agora.day == self._lista_horario[0].day and \
+                    agora.hour == self._lista_horario[0].hour and \
+                    agora.minute == self._lista_horario[0].minute and \
+                    agora.second == self._lista_horario[0].second:
+                self._lista_horario.remover()
+
+                if self.kparametro is not None:
+                    th = Thread(target=self.funcao, kwargs=self.kparametro)
+                else:
+                    th = Thread(target=self.funcao)
+                th.start()
+            elif self._lista_horario[0] < agora:
+                break
+
+            if not self._lista_horario:
+                break
+
+
+def temporizador(*args, **kwargs):
+    """ Função para chamada da classe Temporizador.
+    parametros: funcao, horario: str = "", **kparametro
+    :return: None. """
+    t = Temporizador(*args, **kwargs)
+    t.start()
+    t.join()
+
+
+def converter_string_data(horario: str, formato="24hs", completo=False, ordenar=True) -> list:
+    """ Conversão de string em datetime.
+    :param horario: Horario(s). Separador por ',' caso seja informado em plural.
+    :param formato: Definição do formato do horário: AM, PM ou 24hs(default).
+    :param completo: Formato da horário. Caso True o formato deve ser 'dd/mm/yyyy hh:mm:ss', senão, 'hh:mm:ss'.
+    Pode-se omitir os segundos.
+    :param ordenar: Classificação em ordem crescente dos horários.
+    :return: lista de horários(datetime). """
+    assert isinstance(horario, str), "Formato do parâmetro horário inválido"
+
+    separador = ', ' if ', ' in horario else ','
+
+    lista_horario = horario.split(separador)
+
+    ano, mes, dia = datetime.now().year, datetime.now().month, datetime.now().day
+    segundo = 0
+
+    for i, h in enumerate(lista_horario):
+        if completo:
+            h = h.replace('/', ':')
+            h = h.replace(' ', ':')
+            lista_horario[i] = h.split(':')
+
+            ano, mes, dia = int(lista_horario[i][2]), int(lista_horario[i][1]), int(lista_horario[i][0])
+            hora, minuto = int(lista_horario[i][3]), int(lista_horario[i][4])
+
+            if formato.lower() == 'pm':
+                hora += 12
+
+            if len(lista_horario[i]) > 5:
+                segundo = int(lista_horario[i][5])
+        else:
+            lista_horario[i] = h.split(':')
+            hora, minuto = int(lista_horario[i][0]), int(lista_horario[i][1])
+            if len(lista_horario[i]) > 2:
+                segundo = int(lista_horario[i][2])
+
+        lista_horario[i] = datetime(ano, mes, dia, hora, minuto, segundo)
+
+    if len(lista_horario) > 1 and ordenar:
+        lista_horario.sort()
+    return lista_horario
 
 
 def pausar(mensagem='\nENTER para continuar '):

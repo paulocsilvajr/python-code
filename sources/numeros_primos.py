@@ -35,7 +35,7 @@ class NumeroPrimo:
 
     def listar(self, inicial, final):
         """ Retorna uma lista de números primos dentro do intervalo informado(inicial, final). """
-        # Verificação para os parametros de entrada, gera excessão caso não atendidas.
+        # Verificação para os parametro de entrada, gera excessão caso não atendidas.
         assert isinstance(inicial, int), "Param. inicial não é inteiro"
         assert isinstance(inicial, int), "Param. final não é inteiro"
         assert inicial > 0, "Param. inicial <= 0"
@@ -72,11 +72,11 @@ if __name__ == "__main__":
 
         print("Números primos\n")
         opc = validar_intervalo(input_tipo("1 - Verificar\n"
-                        "2 - Listar\n"
-                        "3 - Gerador infinito\n"
-                        "4 - Conjunto\n"
-                        "0 - Sair\n"
-                        "\t: "), 0, 4)
+                                           "2 - Listar\n"
+                                           "3 - Gerador infinito\n"
+                                           "4 - Conjunto\n"
+                                           "0 - Sair\n"
+                                           "\t: "), 0, 4)
 
         if opc == 1:
             # Verificação de número primo, usando if como operador ternário.

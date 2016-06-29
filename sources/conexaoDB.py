@@ -2,9 +2,11 @@
 # coding: utf-8
 
 try:
-    from funcoes_uteis import Fila, Tabela  # Importação para uso direto do módulo
+    # Importação para uso direto do módulo
+    from funcoes_uteis import Fila, Tabela, input_tipo, validar_intervalo, pausar, limpar_tela
 except ImportError:
-    from sources.funcoes_uteis import Fila, Tabela  # Importação para uso pelo pacote sources
+    # Importação para uso pelo pacote sources
+    from sources.funcoes_uteis import Fila, Tabela, input_tipo, validar_intervalo, pausar, limpar_tela
 
 import mysql.connector  # sudo apt-get install python3-mysql.connector # ou # pip3 install mysql-connector-python
 import psycopg2  # sudo apt-get install python3-psycopg2
@@ -17,13 +19,14 @@ __author__ = "Paulo C. Silva Jr."
 
 
 class Conexao:
-    def __init__(self, dbms='', dbname='', user='', host='', password='', historico=True, tamanho_historico=100):
+    def __init__(self, dbms='', dbname='', user='', password='', host='localhost',
+                 historico=True, tamanho_historico=100):
         """ Construtor da classe Conexao.
         :param dbms: nome do Sistema Gerenciador de BD(SGBD). DBMS=Data Base Management System.
         :param dbname: nome do BD. SQLite criará um banco local caso não exista.
         :param user: usuário usado na conexão. Usuários Admin: PostgreSQL=postgres, MySQL=root. SQLite não tem usuário.
-        :param host: host da conexão. Geralmente localhost para teste local. SQLite não tem host.
         :param password: senha do usuário informado. SQLite não tem senha.
+        :param host: host da conexão. Geralmente localhost para teste local. SQLite não tem host.
         :param historico: Habilita o armazenamento de histórico de ações do objeto Conexao.
         :param tamanho_historico: quantidade de registros do histórico. """
         self._dbms = dbms
@@ -56,23 +59,35 @@ class Conexao:
         except:
             raise Exception("Conexão NÃO estabelecida com %s" % dbms)
 
-    def consultar(self, tabela: str, campos="", filtro="", ordenacao=""):
+    def consultar(self, tabela: str, campos="", filtro="", ordenacao="", quantidade=(0, 0)):
         """ Função de consultas ao BD.
         :param tabela: nome da tabela.
         :param campos: nome dos campos que serão exibidos.
-        :param filtro: classificação das tuplas.
-        :param ordenacao: ordenação das tuplas.
+        :param filtro: qualificação das tuplas(WHERE).
+        :param ordenacao: ordenação das tuplas(ORDER BY).
+        :param quantidade: quantidade de registros exibidos(LIMIT), [0]: registro inicial, [1]: quantidade registros.
         :return: Lista contendo tuplas dos registro da tabela pesquisada. """
         assert isinstance(tabela, str), "Formato do parâmetro tabela inválido"
+        assert isinstance(quantidade, tuple), "Formato do parâmetro quantidade inválido"
 
         if campos == "":
             campos = "*"
 
+        quant = ""
+        if quantidade != (0, 0):
+            if len(quantidade) == 1:
+                quantidade = (0, quantidade[0])
+            if self._dbms == 'mysql':
+                quant = " LIMIT %d, %d" % (quantidade[0], quantidade[1])
+            elif self._dbms in ('postgresql', 'sqlite'):
+                quant = " LIMIT %d OFFSET %d" % (quantidade[1], quantidade[0])
+
         self._historico_crud("Consultado", tabela, ("filtro: %s,ordenação: %s" % (filtro, ordenacao)))
 
-        return self.executar("SELECT %s FROM %s%s%s" % (campos, tabela,
-                             (" WHERE " + filtro if filtro else ""),
-                             (" ORDER BY " + ordenacao if ordenacao else "")))
+        return self.executar("SELECT %s FROM %s%s%s%s" % (campos, tabela,
+                                                          (" WHERE " + filtro if filtro else ""),
+                                                          (" ORDER BY " + ordenacao if ordenacao else ""),
+                                                          quant))
 
     def inserir(self, tabela: str, campos: str, valores: str):
         """ Função para inserir registros ao BD.
@@ -92,7 +107,7 @@ class Conexao:
     def excluir(self, tabela: str, filtro: str):
         """ Função para apagar registros de tabela do BD.
         :param tabela: nome tabela.
-        :param filtro: classificação dos registro a apagar.
+        :param filtro: qualificação dos registro a apagar.
         :return: None. """
         assert isinstance(tabela, str), "Formato do parâmetro tabela inválido"
         assert isinstance(filtro, str), "Formato do parâmetro filtro inválido"
@@ -107,7 +122,7 @@ class Conexao:
         :param tabela: nome da tabela.
         :param campos: campos que serão modificados.
         :param valores: valores referentes aos campos inseridos.
-        :param filtro: classificação da modificação.
+        :param filtro: qualificação da modificação.
         :return: None. """
         assert isinstance(tabela, str), "Formato do parâmetro tabela inválido"
         assert isinstance(campos, str), "Formato do parâmetro campos inválido"
@@ -217,73 +232,8 @@ class Conexao:
         if self._gerar_historico:
             print("Fechado a conexão com %s" % self._dbms)
 
+    def fechar(self):
+        self.__del__()
 
-if __name__ == '__main__':
-    # TESTE # TESTE # TESTE # TESTE # TESTE # TESTE # TESTE # TESTE # TESTE # TESTE #
-    # Recuperando o usuário e a senha em arquivo
-    with open('/home/paulo/pc/usuarioSenhaTeste') as f:
-        usuario = f.readline()[:-1]  # recortando o \n=caracter de nova linha
-        senha = f.readline()[:-1]
-    # print(usuario, senha, sep="\n")
-
-    # CONNECTION
-    # postgreSQL
-    # c = Conexao('postgresql', 'teste', usuario, '127.0.0.1', senha)
-    # MySQL/MariaDB
-    # c = Conexao('mysql', 'teste', usuario, '127.0.0.1', senha)
-    # SQLite
-    c = Conexao('sqlite', 'teste')
-
-    # INSERT
-    # for i in range(100):
-    #     c.inserir("teste", "texto, numero, valor, valor_decimal, data_teste",
-    #               "'teste" + str(i) + "', " + str(42+i) + ", " + str(5.25+i) +
-    #               ", " + str(6.35+i) + ",'" + str(2016+i) + "/03/01'")
-    # for i in range(10000):
-    #     c.inserir('pessoa', 'nome, data_nascimento', "'Nome%s', '%d/12/05'" % (i, 2000+i))
-
-    # DELETE
-    # c.excluir("teste", "id>5")
-
-    # UPDATE
-    # c.atualizar("teste", "texto, numero", "'Paulo', 8", "id>40")
-
-    # SELECT
-    # c.consultar("teste", "*", ordenacao="id")
-    # for i in c.exibir_dados():
-    #     print(i)
-    # c.consultar("pessoa", filtro="id>=75 and id<=100")
-    # t = Tabela(c.exibir_dados(), c.descricao_campos(), titulo_tabela="pessoa")
-    # print(t)
-
-    # OU
-    # for tupla in c.consultar("teste", "*", ordenacao="id"):
-    #     print(tupla)
-
-    # Descrições da tabela
-    # print(c.descricao())
-    # print(c.descricao_campos())
-
-    # Mensagens
-    # print(c.quantidade_registros(), "registros")
-    # print(c.mensagem_status())
-
-    # Histórico do objeto Conexao
-    # c.exibir_historico()
-
-    # Impressão dados pela class Tabela
-    # t = Tabela(c.exibir_dados(), c.descricao_campos(), titulo_tabela="Tabela Teste")
-    # print(t)
-
-    # CREATE TABLE
-    # SQLite EXAMPLE
-    # c.criar_tabela('pessoa', "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-    #                          "nome VARCHAR(100) NOT NULL,"
-    #                          "data_nascimento TIMESTAMP")
-    # for i in range(100):
-    #     c.inserir('pessoa', 'nome, data_nascimento', "'Pessoa%s', '2000/02/01'" % i)
-    for i in c.consultar('pessoa', filtro="id<26", ordenacao='id, nome'):
-        print(i)
-
-    # CLOSE CONNECTION
-    del c
+if __name__ == "__main__":
+    pass
