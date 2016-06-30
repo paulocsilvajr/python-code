@@ -3,6 +3,9 @@
 from time import sleep
 from threading import Thread
 from os import system, name
+from sources.funcoes_uteis import limpar_tela
+
+__author__ = "Paulo C. Silva Jr"
 
 
 class Timer(Thread):
@@ -44,7 +47,8 @@ while True:
         tempo.start()
 
         for i in range(6):
-            system('clear') if name in ('posix',) else system('cls') if name in ('nt', 'ce') else None
+            # system('clear') if name in ('posix',) else system('cls') if name in ('nt', 'ce') else None
+            limpar_tela()
             entrada += input("%s" % entrada) + (" " if i < 5 else "")
         # print(entrada)
 

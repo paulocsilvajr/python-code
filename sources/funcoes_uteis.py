@@ -283,8 +283,18 @@ def pausar(mensagem='\nENTER para continuar '):
             break
 
 
-def input_tipo(texto='\t: ', mensagem_erro='\tValor incorreto', tipo='int'):
-    """ Captura entrada do teclado com validação, retorno de acordo com tipo especificado:
+def calcular_string(texto, operacoes=('+', '-', '*', '/', '**', '//', '%')):
+    for op in operacoes:
+        if op in texto:
+            print(texto, '=', eval(texto))
+            break
+    return eval(texto)
+
+
+def input_tipo(texto='\t: ', mensagem_erro='\tValor incorreto', tipo='int',
+               operacoes=('+', '-', '*', '/', '**', '//', '%')):
+    """ Captura entrada do teclado com validação, retorno de acordo com tipo especificado.
+    Nos tipos int e float pode-se fazer calculos(1+2)
     tipo='int': Validação de inteiro, default, retorno int;
     tipo='float': Validação de ponto flutuante, returno float;
     tipo='list': Validação de lista, retorno list;
@@ -296,9 +306,11 @@ def input_tipo(texto='\t: ', mensagem_erro='\tValor incorreto', tipo='int'):
         try:
             # Inteiro
             if tipo == 'int':
+                n = calcular_string(n, operacoes)
                 n = int(n)
             # Ponto flutuante
             elif tipo == 'float':
+                n = calcular_string(n, operacoes)
                 n = float(n)
             # Lista
             elif tipo == 'list':
@@ -382,6 +394,7 @@ if __name__ == '__main__':
                                            "3 - Lista aleatória\n"
                                            "0 - Sair\n"
                                            "\t: "), 0, 3)
+        opc2 = None
 
         if opc == 1 or opc == 2:
             if opc == 1:
