@@ -32,8 +32,9 @@ class Conexao:
         self._dbms = dbms
         self._gerar_historico = historico
         self._tamanho_hist = tamanho_historico
-        self._hist = Fila()
+        self._historico_acoes = Fila()
         self._excecao = None
+        self.dml = ""
 
         try:
             if dbms == 'mysql':
@@ -51,7 +52,7 @@ class Conexao:
                 raise Exception("SGBD %s não cadastrado" % dbms)
 
             if self._gerar_historico:
-                self._hist.incluir("Conexão estabelecida com %s" % dbms)
+                self._historico_acoes.incluir("Conexão estabelecida com %s" % dbms)
 
             # Para o cursor na forma de dicionário no postgreSQL usar:
             # self._cursor = self._conexao._cursor(cursor_factory = psycopg2.extras.RealDictCursor)
@@ -159,6 +160,7 @@ class Conexao:
         ou exc_info: informações da execução, caso contrário. """
         try:
             assert isinstance(dml, str), "Formato do parâmetro dml inválido"
+            self.dml = dml
             self._cursor.execute(dml)
             return self._cursor
         except self._excecao:
@@ -204,15 +206,15 @@ class Conexao:
         :return: quantidade de registro do cursor em inteiro. """
         return self._cursor.rowcount
 
-    def exibir_historico(self, ultimo_reg=False):
+    def exibir_historico_acoes(self, ultimo_reg=False):
         """ Função para exibir o histórico de transações no BD.
         :param ultimo_reg: exibe registro de histórico. Caso True, exibe somente o último registro.
         :return: string do histórico. """
         msg = ""
         if ultimo_reg:
-            msg = self._hist.exibir()[-1:][0]
+            msg = self._historico_acoes.exibir()[-1:][0]
         else:
-            for i, e in enumerate(self._hist.exibir()):
+            for i, e in enumerate(self._historico_acoes.exibir()):
                 msg += "%d: %s\n" % (i+1, e)
         if self._gerar_historico:
             print(msg)
@@ -222,9 +224,9 @@ class Conexao:
         """ Função base para geração de histórico.
         :return: None. """
         if self._gerar_historico:
-            if len(self._hist.exibir()) == self._tamanho_hist:
-                self._hist.remover()
-            self._hist.incluir("%s tupla(%s) da tabela %s" % (acao, filtro, tabela))
+            if len(self._historico_acoes.exibir()) == self._tamanho_hist:
+                self._historico_acoes.remover()
+            self._historico_acoes.incluir("%s tupla(%s) da tabela %s" % (acao, filtro, tabela))
 
     def __del__(self):
         """ Função para fechar a conexão quando o objeto Conexao for destruido. """
@@ -234,6 +236,96 @@ class Conexao:
 
     def fechar(self):
         self.__del__()
+
+
+class Tabela:
+    def __init__(self, bd: Conexao, tabela: str):
+        """ Construtor genérico de tabela. Informar obrigatóriamente uma base de dados e uma tabela válida. """
+        assert isinstance(bd, Conexao), "Tipo do parâmetro bd inválido."
+        assert isinstance(tabela, str), "Tipo do parâmetro tabela inválido"
+
+        self.bd = bd
+        self.nome_tabela = tabela
+        bd.consultar(self.nome_tabela, quantidade=(1,))
+        self.campos = bd.descricao_campos()
+        self.campos_protegidos = []
+
+    def consultar(self, *args, **kwargs):
+        """ Consulta da tabela.
+        :param args: indices do atributo self.campos ou string da coluna. Ex. campos[1].
+        :param kwargs: dicionário para qualificação da consulta(filtro: str, ordenacao: str, quantidade: tuple).
+        :return: cursor ref. a consulta realizada. Para exibir os dados usar .fetchall() ou o método exibir(). """
+        if len(args) == 0:
+            campos = "*"
+        else:
+            campos = ((len(args) - 1) * "{}, " + "{}").format(*args)
+
+        return self.bd.consultar(self.nome_tabela, campos, **kwargs)
+
+    def exibir(self):
+        """ Exibição dos dados consultados da tabela.
+        :return: lista de tuplas correspondente aos registros consultados. """
+        return self.bd.exibir_dados()
+
+    def _campos_autorizados(self, funcao: str, kwargs):
+        """ Verificação dos campos autorizados à atualização e inserção."""
+        if self.campos_protegidos:
+            for campo in self.campos_protegidos:
+                if campo in kwargs.keys():
+                    raise Exception('{}: Campos {} devem ser preservados.'.format(funcao, self.campos_protegidos))
+
+        return True
+
+    def inserir(self, **kwargs):
+        """ Insercão de dados na tabela.
+        :param kwargs: parametros em forma de dicionário: campo='Valor Campo'.
+        :return: None. """
+        if self._campos_autorizados(self.nome_tabela+'.inserir', kwargs):
+            campos = ((len(kwargs) - 1) * "{}, " + "{}").format(*kwargs.keys())
+            valores = ""
+
+            for i, valor in enumerate(kwargs.values(), start=1):
+                separador = ', ' if i < len(kwargs) else ''
+
+                if isinstance(valor, str):
+                    valores += "'{}'{}".format(valor, separador)
+                else:
+                    valores += "{}{}".format(valor, separador)
+
+            self.bd.inserir(self.nome_tabela, campos, valores)
+
+    def atualizar(self, **kwargs):
+        """ Atualização de dados da tabela.
+        :param kwargs: parametros em forma de dicionário: campo='Valor Campo'.
+        Para especificar quais campos devem ser modificados, deve-se usar o parametro filtro='campo=Numero'.
+        :return: None. """
+        if self._campos_autorizados(self.nome_tabela+'.atualizar', kwargs):
+            if 'filtro' in kwargs.keys():
+                filtro = kwargs.pop('filtro')
+            else:
+                filtro = ""
+
+            campos = ((len(kwargs) - 1) * "{}, " + "{}").format(*kwargs.keys())
+            valores = ""
+
+            for i, valor in enumerate(kwargs.values(), start=1):
+                separador = ', ' if i < len(kwargs) else ''
+
+                if isinstance(valor, str):
+                    valores += "'{}'{}".format(valor, separador)
+                else:
+                    valores += "{}{}".format(valor, separador)
+
+            self.bd.atualizar(self.nome_tabela, campos, valores, filtro)
+
+    def excluir(self, filtro: str):
+        """ Exclusão de dados da tabela.
+        :param filtro: Delimitação da exclusão.
+        :return: None. """
+        assert isinstance(filtro, str), "Formato do parâmetro filtro inválido"
+
+        self.bd.excluir(self.nome_tabela, filtro)
+
 
 if __name__ == "__main__":
     pass

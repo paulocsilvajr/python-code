@@ -65,12 +65,15 @@ class Pilha:
         return self._elementos
 
     def __getitem__(self, item):
-        return self._elementos[item] if self._elementos else None
+        """ Exibição de _elementos[item]. """
+        return self._elementos[item]
 
     def __setitem__(self, key, value):
+        """ Atibuição de value em _elementos[key]. """
         self._elementos[key] = value
 
     def __bool__(self):
+        """ Caso exista itens em _elementos, retorna True. """
         return bool(self._elementos)
 
     def __repr__(self):
@@ -171,7 +174,7 @@ class Temporizador(Thread):
         """ Inclusão do(s) horário(s) gatilho do temporizador.
         :param horario: Horario(s). Separador por ',' caso seja informado em plural.
         :param formato: Definição do formato do horário: AM, PM ou 24hs(default).
-        :param completo: Formato da horário. Caso True o formato deve ser 'dd/mm/yyyy hh:mm:ss', senão, 'hh:mm:ss'.
+        :param completo: Formato da horário. Caso True o formato deve ser 'dd/mm/yyyy hh:mm:ss', se não, 'hh:mm:ss'.
         Pode-se omitir os segundos.
         :return: None. """
         if "+" in horario:
@@ -382,6 +385,25 @@ def limpar_tela():
     elif name in sist_windowns:
         system('cls')
 
+
+def report_event(event):
+    """Imprime a descrição de um evento, baseado em seus atributos.
+    ref. FERD, Steven. PENSANDO EM TKINTER. Disponível em
+    <http://www.dcc.ufrj.br/~fabiom/mab225/PensandoTkinter.pdf>. """
+    event_name = {"2": "KeyPress", "4": "ButtonPress"}
+    print("Time:", str(event.time))
+    print("EventType=" + str(event.type),
+          event_name[str(event.type)],
+          "EventWidgetId=" + str(event.widget),
+          "EventKeySymbol=" + str(event.keysym))
+
+
+def converter_formato_data(strdata: str) -> str:
+    data = strdata.split(' ')
+    data, hora = data[0], data[1]
+    data = "{2}/{1}/{0}".format(*data.split('-'))
+    hora = hora.split('.')[0]
+    return data + " " + hora
 
 if __name__ == '__main__':
     # Teste em interface de texto.
