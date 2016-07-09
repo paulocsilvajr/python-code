@@ -182,9 +182,12 @@ class Conexao:
         return None
 
     def exibir_dados(self):
-        """ Função para exibição dos dados do cursor.
+        """ Função para exibição dos dados do cursor, se existirem, caso contrário, retorna lista vazia.
         :return: Lista com registros do cursor. """
-        return self._cursor.fetchall()
+        try:
+            return self._cursor.fetchall()
+        except self._excecao:
+            return list()
 
     def descricao(self):
         """ Função base para a função descrição campos.

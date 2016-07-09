@@ -14,6 +14,7 @@ except ImportError:
 import tkinter as tk
 from tkinter import ttk
 from tkinter.messagebox import showinfo, showwarning, askyesno
+import string
 
 __author__ = "Paulo C. Silva Jr."
 
@@ -99,11 +100,11 @@ class FrmPrincipal(tk.Tk):
         FrmContas(self, contas)
 
     def lancamentos(self, event):
-        report_event(event)
-        showinfo("teste", "criar cadastro lancamentos")
+        pass
 
     def pessoas(self, event):
-        showinfo("teste", "criar cadastro pessoas")
+        pessoas = Pessoas()
+        FrmPessoas(self, pessoas)
 
 
 class FrmContas(tk.Toplevel):
@@ -114,7 +115,7 @@ class FrmContas(tk.Toplevel):
         # Atributo obrigatório para atribuição de registro selecionado no formulário consultas.
         self.dados_consulta = []
 
-        self.title("Cadastro de contas")
+        self.title("Cadastro de Contas")
         self.geometry('450x200')
 
         # ttk.Style().theme_use('clam') # Somente deve-se declarar o tema no formulário pai.
@@ -137,7 +138,7 @@ class FrmContas(tk.Toplevel):
 
         self.edt_descricao = ttk.Entry(frame)
         self.edt_descricao.focus_force()
-        self.edt_descricao.place(x=120, y=40, width=150, height=20)
+        self.edt_descricao.place(x=120, y=40, width=250, height=20)
 
         self.lbl_conta_pai = ttk.Label(frame, text="Conta Pai")
         self.lbl_conta_pai.place(x=10, y=70, width=100, height=20)
@@ -295,7 +296,206 @@ class FrmLancamentos:
     pass
 
 
-class FrmPessoas:
+class FrmPessoas(tk.Toplevel):
+    def __init__(self, root, pessoas: Pessoas):
+        super(FrmPessoas, self).__init__(root)
+        self.pessoas = pessoas
+
+        self.dados_consulta = []
+
+        self.title("Cadastro de Pessoas")
+        largura, altura = 450, 170
+        self.geometry("%dx%d" % (largura, altura))
+        self.resizable(width=False, height=False)
+
+        frame = ttk.Frame(self)
+        frame.place(x=0, y=0, width=largura, height=altura)
+
+        # Variáveis
+
+        # Componentes do formulário.
+        # VALIDAR CPF E RG # VALIDAR CPF E RG # VALIDAR CPF E RG # VALIDAR CPF E RG # VALIDAR CPF E RG #
+        self.lbl_cpf = ttk.Label(frame, text="CPF")
+        self.lbl_cpf.place(x=10, y=10, width=100, height=20)
+
+        self.default_cpf = "   .   .   -  "
+        self.edt_cpf = ttk.Entry(frame)
+        self.edt_cpf.focus_force()
+        self.edt_cpf.place(x=120, y=10, width=150, height=20)
+        self.edt_cpf.bind('<KeyPress>', self.escrever_cpf)
+        self.edt_cpf.bind('<KeyRelease>', self.escrever_cpf_release)
+
+        self.lbl_rg = ttk.Label(frame, text="RG")
+        self.lbl_rg.place(x=10, y=40, width=100, height=20)
+
+        self.default_rg = "  .   .   - "
+        self.edt_rg = ttk.Entry(frame)
+        self.edt_rg.place(x=120, y=40, width=150, height=20)
+        self.edt_rg.bind('<KeyPress>', self.escrever_rg)
+        self.edt_rg.bind('<KeyRelease>', self.escrever_rg_release)
+
+        self.lbl_nome = ttk.Label(frame, text="Nome")
+        self.lbl_nome.place(x=10, y=70, width=100, height=20)
+
+        self.edt_nome = ttk.Entry(frame)
+        self.edt_nome.place(x=120, y=70, width=250, height=20)
+
+        self.lbl_inclusao = ttk.Label(frame, text="Data inclusão")
+        self.lbl_inclusao.place(x=10, y=100, width=100, height=20)
+
+        self.default_data = "  /  /    "
+        self.lbl_data_inclusao = ttk.Label(frame)
+        self.lbl_data_inclusao.place(x=120, y=100, width=150, height=20)
+
+        # Limpar e atribuição de valores default.
+        self.limpar_campos()
+
+        # Botões
+        self.btn_salvar = ttk.Button(frame, text="Salvar")
+        self.btn_salvar.place(x=10, y=130, width=100, height=30)
+        self.btn_salvar.bind('<Button-1>', self.salvar)
+
+        self.btn_limpar = ttk.Button(frame, text="Limpar")
+        self.btn_limpar.place(x=120, y=130, width=100, height=30)
+        self.btn_limpar.bind('<Button-1>', self.limpar)
+
+        self.btn_excluir = ttk.Button(frame, text="Excluir")
+        self.btn_excluir.place(x=230, y=130, width=100, height=30)
+        self.btn_excluir.bind('<Button-1>', self.excluir)
+
+        self.btn_consultar = ttk.Button(frame, text="Consultar")
+        self.btn_consultar.place(x=340, y=130, width=100, height=30)
+        self.btn_consultar.bind('<Button-1>', self.consultar)
+
+        self.transient(root)
+        self.focus_force()
+
+        # Eventos do formulário.
+        self.bind('<Escape>', self.fechar)
+        self.bind('<Alt-s>', self.salvar)
+        self.bind('<Alt-e>', self.excluir)
+        self.bind('<Alt-l>', self.limpar)
+        self.bind('<Alt-c>', self.consultar)
+
+    def escrever_cpf(self, event):
+        # report_event(event)
+        self._escrever_mascara_entry(event.char, self.edt_cpf, self.default_cpf)
+
+    @staticmethod
+    def _escrever_mascara_entry(evento_char, ref_entry: ttk.Entry, mascara: str, especial: str = ''):
+        """ Método para formatar a entrada de um Entry de acordo com mascara.
+        :param evento_char: event.char do evento.
+        :param ref_entry: Referência do componente Entry.
+        :param mascara: Mascara base para a formatação. Deve apresentar espacos onde quer ser inseridos os números.
+        :return: none. """
+        # Apaga o Entry caso o conteúdo seja o default.
+        if ref_entry.get() == mascara:
+            ref_entry.delete(0, 'end')
+
+        # O event.char captura de tecla literalmente, mas não captura teclas de controle(Backspace, ...).
+        # O event.keysym usa uma nomenclatura diferente, e captura todas as teclas.
+        # Tkinter 8.5 reference gui for Python. 161-162.
+        if evento_char in string.digits or evento_char in especial:
+            pos = len(ref_entry.get())
+            try:
+                if mascara[pos] != ' ':
+                    ref_entry.insert('end', mascara[pos])
+            except IndexError:
+                ref_entry.delete(0, 'end')
+
+    def escrever_cpf_release(self, event):
+        # report_event(event)
+        self._apagar_caracter_invalido(event.char, self.edt_cpf, string.ascii_letters)
+
+    @staticmethod
+    def _apagar_caracter_invalido(evento_char, ref_entry: ttk.Entry, caracteres_inválidos: str):
+        """ Método para apagar os caracteres inseridos em um Entry no momento da digitação.
+        :param evento_char: event.char do evento.
+        :param ref_entry: Referência do componente Entry.
+        :param caracteres_inválidos: string de caracteres que deseja-se que sejam apagados.
+        :return: none. """
+        if evento_char in caracteres_inválidos:
+            ref_entry.delete(len(ref_entry.get()) - 1, 'end')
+
+    def escrever_rg(self, event):
+        self._escrever_mascara_entry(event.char, self.edt_rg, self.default_rg, especial='xX')
+
+    def escrever_rg_release(self, event):
+        letras = string.ascii_letters.replace('X', '').replace('x', '')
+        self._apagar_caracter_invalido(event.char, self.edt_rg, letras)
+
+    def carregar_dados(self):
+        self.limpar_campos(default=False)
+
+        self.edt_cpf.insert(0, self.dados_consulta[0])
+        self.edt_rg.insert(0, self.dados_consulta[1])
+        self.edt_nome.insert(0, self.dados_consulta[2])
+        self.lbl_data_inclusao['text'] = converter_formato_data(self.dados_consulta[3])
+
+    def fechar(self, event):
+        self.destroy()
+
+    def salvar(self, event):
+        """ Evento para salvar e modificar registros. """
+        cpf = "" if self.edt_cpf.get() == self.default_cpf else self.edt_cpf.get()
+        rg = self.edt_rg.get()
+        nome = self.edt_nome.get()
+
+        if not nome:
+            showwarning("Atenção", "Nome vazia")
+        elif not cpf:
+            showwarning("Atenção", "CPF vazio")
+        else:
+            parametros = {'cpf': cpf,
+                          'rg': rg,
+                          'nome': nome}
+
+            self.pessoas.consultar(filtro="cpf = '%s'" % cpf)
+            # cpf_cadastrado = self.pessoas.exibir()
+
+            if not self.pessoas.exibir():
+                self.pessoas.inserir(**parametros)
+
+                showinfo("Informação", "Cadastro realizado com sucesso")
+
+                self.limpar_campos()
+            else:
+                self.pessoas.atualizar(**parametros, filtro="cpf = '%s'" % cpf)
+
+                showinfo("Informação", "Atualização realizada com sucesso")
+
+                self.limpar_campos()
+
+    def limpar(self, event):
+        self.limpar_campos()
+
+    def limpar_campos(self, default=True):
+        self.edt_cpf.delete(0, 'end')
+        if default:
+            self.edt_cpf.insert(0, self.default_cpf)
+
+        self.edt_rg.delete(0, 'end')
+        if default:
+            self.edt_rg.insert(0, self.default_rg)
+
+        self.edt_nome.delete(0, 'end')
+        self.edt_nome.insert(0, "")
+
+        self.lbl_data_inclusao['text'] = self.default_data
+
+    def excluir(self, event):
+        cpf = self.edt_cpf.get()
+        if cpf == '' or cpf == self.default_cpf:
+            showinfo("Atenção", "Consulte um registro para excluir")
+        elif askyesno("Atenção", "Deseja realmente excluir %s" % self.edt_nome.get()):
+            self.pessoas.excluir("cpf = '%s'" % cpf)
+
+            self.limpar_campos()
+
+    def consultar(self, event):
+        FrmConsultas(self, self.pessoas, 'cpf', 'rg', 'nome', 'data_inclusao',
+                     cpf="= '%s'", nome="ILIKE '%%%s%%'", rg="= '%s'")
+
     # A implementar.
     pass
 
@@ -307,7 +507,10 @@ class FrmConsultas(tk.Toplevel):
         Elaboração da TreeView baseado em <http://pt.stackoverflow.com/questions/23053/ajuda-tables-python27>
         :param root: Formulário pai.
         :param origem: Tabela que se deseja consultar.
-        :param campos: Campos em forma de valores de parametros que serão exibidos na TreeView."""
+        :param campos: Campos em forma de valores de parametros que serão exibidos na TreeView.
+        Obs: Deve-se declarar no formulário pai: um atributo self.dados_consulta = [] e
+        um método self.carregar_dados(self): ..., que tem que atribuir os componentes do formulario pai
+        os mesmos valores informados no parametro campos do contrutor de FrmConsultas(). """
         # Construtor do TopLevel
         super(FrmConsultas, self).__init__(root)
         self.frm_original = root
@@ -362,11 +565,12 @@ class FrmConsultas(tk.Toplevel):
         # Insere cada item dos dados
         self.alimentar_treeview()
 
+        self.tree.bind('<Double-1>', self.carregar_dados)
+
         self.transient(root)
         self.focus_force()
 
         # Eventos do formulário.
-        self.bind('<Double-1>', self.carregar_dados)
         self.bind('<Escape>', self.fechar)
 
     def fechar(self, event):

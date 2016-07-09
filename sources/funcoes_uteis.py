@@ -389,13 +389,15 @@ def limpar_tela():
 def report_event(event):
     """Imprime a descrição de um evento, baseado em seus atributos.
     ref. FERD, Steven. PENSANDO EM TKINTER. Disponível em
-    <http://www.dcc.ufrj.br/~fabiom/mab225/PensandoTkinter.pdf>. """
-    event_name = {"2": "KeyPress", "4": "ButtonPress"}
+    <http://www.dcc.ufrj.br/~fabiom/mab225/PensandoTkinter.pdf>.
+    Eventos: Tkinter 8.5 reference gui for Python. 158-162."""
+    event_name = {"2": "KeyPress", "3": "KeyRelease", "4": "ButtonPress"}
     print("Time:", str(event.time))
+
     print("EventType=" + str(event.type),
-          event_name[str(event.type)],
+          event_name[str(event.type)] if str(event.type) in event_name.keys() else "",
           "EventWidgetId=" + str(event.widget),
-          "EventKeySymbol=" + str(event.keysym))
+          "EventKeySymbol=" + str(event.keysym), "KeyChar(KeyPress/KeyRelease)=" + event.char, sep="\n")
 
 
 def converter_formato_data(strdata: str) -> str:
