@@ -6,15 +6,16 @@
 
 try:
     from conexaoDB import Conexao, Tabela
-    from funcoes_uteis import report_event, converter_formato_data
+    from funcoes_uteis import report_event, converter_formato_data, Cpf, data_atual
 except ImportError:
     from sources.conexaoDB import Conexao, Tabela
-    from sources.funcoes_uteis import report_event, converter_formato_data
+    from sources.funcoes_uteis import report_event, converter_formato_data, Cpf, data_atual
 
 import tkinter as tk
 from tkinter import ttk
 from tkinter.messagebox import showinfo, showwarning, askyesno
 import string
+from datetime import datetime
 
 __author__ = "Paulo C. Silva Jr."
 
@@ -40,6 +41,11 @@ class Contas(Tabela):
 class Lancamentos(Tabela):
     def __init__(self):
         super(Lancamentos, self).__init__(bd_contas, 'lancamentos')
+
+
+class VwLancamentosContas(Tabela):
+    def __init__(self):
+        super(VwLancamentosContas, self).__init__(bd_contas, 'vw_lancamento_contas')
 
 
 class Pessoas(Tabela):
@@ -100,7 +106,11 @@ class FrmPrincipal(tk.Tk):
         FrmContas(self, contas)
 
     def lancamentos(self, event):
-        pass
+        lancamentos = Lancamentos()
+        contas = Contas()
+        pessoas = Pessoas()
+        vw_lancamento_contas = VwLancamentosContas()
+        FrmLancamentos(self, lancamentos, contas, pessoas, vw_lancamento_contas)
 
     def pessoas(self, event):
         pessoas = Pessoas()
@@ -291,9 +301,340 @@ class FrmContas(tk.Toplevel):
         self.lbl_data_inclusao['text'] = converter_formato_data(self.dados_consulta[4])
 
 
-class FrmLancamentos:
-    # A implementar.
-    pass
+class FrmLancamentos(tk.Toplevel):
+    def __init__(self, root, lancamentos: Lancamentos, contas: Contas,
+                 pessoas: Pessoas, vw_lancamento_contas: VwLancamentosContas):
+        super(FrmLancamentos, self).__init__(root)
+        self.lancamentos = lancamentos
+        self.contas = contas
+        self.pessoas = pessoas
+        self.vw_lancamento_contas = vw_lancamento_contas
+
+        self.dados_consulta = []
+
+        self.title("Lançamento de contas")
+        largura, altura = 1064, 440
+        self.geometry("%dx%d" % (largura, altura))
+        self.resizable(width=False, height=False)
+
+        frame = ttk.Frame(self)
+        frame.place(x=0, y=0, width=largura, height=altura)
+
+        # Componentes
+        self.id_lanc = 0
+        self.id_conta = 0
+        self.cpf_pessoa = ""
+        self.id_transf = 0
+
+        self.desc_conta = "Conta origem"
+        self.edt_conta = ttk.Entry(frame)
+        self.edt_conta.place(x=10, y=350, width=150, height=30)
+        self.edt_conta.focus_force()
+        self.edt_conta.bind('<FocusIn>', self.limpar_sob_foco_in_edt_conta)
+        self.edt_conta.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_conta)
+
+        self.desc_pessoa = "Nome pessoa"
+        self.edt_pessoa = ttk.Entry(frame)
+        self.edt_pessoa.place(x=162, y=350, width=150, height=30)
+        self.edt_pessoa.bind('<FocusIn>', self.limpar_sob_foco_in_edt_pessoa)
+        self.edt_pessoa.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_pessoa)
+        self.edt_pessoa.bind('<KeyPress>', self.formatar_cpf)
+
+        self.desc_dvenc = "Data vencimento"
+        self.edt_data_venc = ttk.Entry(frame)
+        self.edt_data_venc.place(x=314, y=350, width=90, height=30)
+        self.edt_data_venc.bind('<FocusIn>', self.limpar_sob_foco_in_edt_data_venc)
+        self.edt_data_venc.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_data_venc)
+        self.edt_data_venc.bind('<KeyPress>', self.formatar_data_venc)
+
+        self.desc_dpgto = "Data pagamento"
+        self.edt_data_pgto = ttk.Entry(frame)
+        self.edt_data_pgto.place(x=406, y=350, width=90, height=30)
+        self.edt_data_pgto.bind('<FocusIn>', self.limpar_sob_foco_in_edt_data_pgto)
+        self.edt_data_pgto.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_data_pgto)
+        self.edt_data_pgto.bind('<KeyPress>', self.formatar_data_pgto)
+
+        self.desc_numero = "Número conta"
+        self.edt_numero = ttk.Entry(frame)
+        self.edt_numero.place(x=498, y=350, width=100, height=30)
+        self.edt_numero.bind('<FocusIn>', self.limpar_sob_foco_in_edt_numero)
+        self.edt_numero.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_numero)
+
+        self.desc_descricao = "Descrição"
+        self.edt_descricao = ttk.Entry(frame)
+        self.edt_descricao.place(x=600, y=350, width=150, height=30)
+        self.edt_descricao.bind('<FocusIn>', self.limpar_sob_foco_in_edt_descricao)
+        self.edt_descricao.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_descricao)
+
+        self.desc_transf = "Conta destino"
+        self.edt_transferencia = ttk.Entry(frame)
+        self.edt_transferencia.place(x=752, y=350, width=150, height=30)
+        self.edt_transferencia.bind('<FocusIn>', self.limpar_sob_foco_in_edt_transferencia)
+        self.edt_transferencia.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_transferencia)
+
+        self.desc_lanc = "Valor conta"
+        self.edt_lancamento = ttk.Entry(frame)
+        self.edt_lancamento.place(x=904, y=350, width=150, height=30)
+        self.edt_lancamento.bind('<FocusIn>', self.limpar_sob_foco_in_edt_lancamento)
+        self.edt_lancamento.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_lancamento)
+        self.edt_lancamento.bind('<KeyRelease>', self.formatar_valor)
+
+        self.limpar_comp()
+
+        # Botões
+        self.btn_salvar = ttk.Button(frame, text="Salvar")
+        self.btn_salvar.bind('<Button-1>', self.salvar)
+        self.btn_salvar.place(x=10, y=390, width=100, height=30)
+
+        self.btn_limpar = ttk.Button(frame, text="Limpar")
+        self.btn_limpar.place(x=120, y=390, width=100, height=30)
+        self.btn_limpar.bind('<Button-1>', self.limpar)
+
+        self.btn_excluir = ttk.Button(frame, text="Excluir")
+        self.btn_excluir.bind('<Button-1>', self.excluir)
+        self.btn_excluir.place(x=230, y=390, width=100, height=30)
+
+        self.btn_consultar = ttk.Button(frame, text="Consultar")
+        self.btn_consultar.bind('<Button-1>', self.consultar)
+        self.btn_consultar.place(x=340, y=390, width=100, height=30)
+
+        self.transient(root)
+        self.focus_force()
+
+        # Eventos do formulário.
+        self.bind('<Escape>', self.fechar)
+        self.bind('<Alt-s>', self.salvar)
+        self.bind('<Alt-e>', self.excluir)
+        self.bind('<Alt-l>', self.limpar)
+        self.bind('<Alt-c>', self.consultar)
+
+    def fechar(self, event):
+        self.destroy()
+
+    def salvar(self, event):
+        pass
+
+    def consultar(self, event):
+        # Usar vw_lancamentos_conta, já está com o join entre as tabelas.
+        pass
+
+    def excluir(self, event):
+        pass
+
+    def limpar(self, event):
+        self.limpar_comp()
+
+    def limpar_comp(self):
+        self.id_lanc = 0
+        self.id_conta = 0
+        self.cpf_pessoa = ""
+        self.id_transf = 0
+
+        self.edt_conta.delete(0, 'end')
+        self.edt_conta.insert(0, self.desc_conta)
+
+        self.edt_pessoa.delete(0, 'end')
+        self.edt_pessoa.insert(0, self.desc_pessoa)
+
+        self.edt_data_venc.delete(0, 'end')
+        self.edt_data_venc.insert(0, self.desc_dvenc)
+
+        self.edt_data_pgto.delete(0, 'end')
+        self.edt_data_pgto.insert(0, self.desc_dpgto)
+
+        self.edt_numero.delete(0, 'end')
+        self.edt_numero.insert(0, self.desc_numero)
+
+        self.edt_descricao.delete(0, 'end')
+        self.edt_descricao.insert(0, self.desc_descricao)
+
+        self.edt_transferencia.delete(0, 'end')
+        self.edt_transferencia.insert(0, self.desc_transf)
+
+        self.edt_lancamento.delete(0, 'end')
+        self.edt_lancamento.insert(0, self.desc_lanc)
+
+    def carregar_dados(self):
+        pass
+
+    def limpar_sob_foco_in_edt_conta(self, event):
+        if self.edt_conta.get() == self.desc_conta:
+            self.edt_conta.delete(0, 'end')
+
+    def preencher_descricao_foco_out_edt_conta(self, event):
+        if self.edt_conta.get() == "":
+            self.edt_conta.insert(0, self.desc_conta)
+        else:
+            self.pesquisar_atribuir_conta_origem()
+
+    def limpar_sob_foco_in_edt_pessoa(self, event):
+        if self.edt_pessoa.get() == self.desc_pessoa:
+            self.edt_pessoa.delete(0, 'end')
+
+    def preencher_descricao_foco_out_edt_pessoa(self, event):
+        if self.edt_pessoa.get() == "":
+            self.edt_pessoa.insert(0, self.desc_pessoa)
+        else:
+            self.pesquisar_atribuir_pessoa()
+
+    def limpar_sob_foco_in_edt_data_venc(self, event):
+        if self.edt_data_venc.get() == self.desc_dvenc:
+            self.edt_data_venc.delete(0, 'end')
+
+    def preencher_descricao_foco_out_edt_data_venc(self, event):
+        if self.edt_data_venc.get() == "":
+            self.edt_data_venc.insert(0, self.desc_dvenc)
+        elif self.edt_data_venc.get().lower() == "hoje":
+            self.edt_data_venc.insert(0, data_atual()[1])
+
+    def limpar_sob_foco_in_edt_data_pgto(self, event):
+        if self.edt_data_pgto.get() == self.desc_dpgto:
+            self.edt_data_pgto.delete(0, 'end')
+
+    def preencher_descricao_foco_out_edt_data_pgto(self, event):
+        if self.edt_data_pgto.get() == "":
+            self.edt_data_pgto.insert(0, self.desc_dpgto)
+        elif self.edt_data_pgto.get().lower() == "hoje":
+            self.edt_data_pgto.insert(0, data_atual()[1])
+
+    def limpar_sob_foco_in_edt_numero(self, event):
+        if self.edt_numero.get() == self.desc_numero:
+            self.edt_numero.delete(0, 'end')
+
+    def preencher_descricao_foco_out_edt_numero(self, event):
+        if self.edt_numero.get() == "":
+            self.edt_numero.insert(0, self.desc_numero)
+
+    def limpar_sob_foco_in_edt_descricao(self, event):
+        if self.edt_descricao.get() == self.desc_descricao:
+            self.edt_descricao.delete(0, 'end')
+
+    def preencher_descricao_foco_out_edt_descricao(self, event):
+        if self.edt_descricao.get() == "":
+            self.edt_descricao.insert(0, self.desc_descricao)
+
+    def limpar_sob_foco_in_edt_transferencia(self, event):
+        if self.edt_transferencia.get() == self.desc_transf:
+            self.edt_transferencia.delete(0, 'end')
+
+    def preencher_descricao_foco_out_edt_transferencia(self, event):
+        if self.edt_transferencia.get() == "":
+            self.edt_transferencia.insert(0, self.desc_transf)
+        else:
+            self.pesquisar_atribuir_conta_destino()
+
+    def limpar_sob_foco_in_edt_lancamento(self, event):
+        if self.edt_lancamento.get() == self.desc_lanc:
+            self.edt_lancamento.delete(0, 'end')
+
+    def preencher_descricao_foco_out_edt_lancamento(self, event):
+        if self.edt_lancamento.get() == "":
+            self.edt_lancamento.insert(0, self.desc_lanc)
+
+    def pesquisar_atribuir_conta_origem(self):
+        if self.edt_conta.get() != self.desc_conta:
+            dado = self.pesquisar(self.contas, 'id', 'descricao',
+                                  filtro="descricao ILIKE '%%%s%%'" % self.edt_conta.get(),
+                                  quantidade=(1,))
+            if dado:
+                self.id_conta = int(dado[0][0])
+                self.edt_conta.delete(0, 'end')
+                self.edt_conta.insert(0, dado[0][1])
+            else:
+                self.id_conta = 0
+
+                if askyesno("Atenção", "Deseja cadastrar a conta %s" % self.edt_conta.get()):
+                    contas = FrmContas(self, self.contas)
+                    contas.edt_descricao.insert(0, self.edt_conta.get())
+
+                    # Se não fechar o form. FrmContas
+                    if not self.wait_window(contas):
+                        self.pesquisar_atribuir_conta_origem()
+                else:
+                    self.edt_conta.delete(0, 'end')
+                    self.edt_conta.insert(0, self.desc_conta)
+
+    def formatar_cpf(self, event):
+        if event.char in string.digits:
+            FrmPessoas.escrever_mascara_entry(event.char, self.edt_pessoa, '   .   .   -  ')
+
+    def formatar_data_pgto(self, event):
+        if event.char in string.digits:
+            FrmPessoas.escrever_mascara_entry(event.char, self.edt_data_pgto, '  /  /    ')
+
+    def formatar_data_venc(self, event):
+        if event.char in string.digits:
+            FrmPessoas.escrever_mascara_entry(event.char, self.edt_data_venc, '  /  /    ')
+
+    def formatar_valor(self, event):
+        FrmPessoas.apagar_caracter_invalido(event.char, self.edt_lancamento,
+                                            (string.ascii_letters +
+                                             string.punctuation.replace('.', '').replace(',', '') +
+                                             ' '))
+        if event.char == ',':
+            self.edt_lancamento.delete(len(self.edt_lancamento.get()) - 1, 'end')
+            self.edt_lancamento.insert('end', '.')
+
+    def pesquisar_atribuir_pessoa(self):
+        if self.edt_pessoa.get() != self.desc_pessoa:
+            dado = self.pesquisar(self.pessoas, 'cpf', 'nome',
+                                  filtro="cpf ILIKE '%%%s%%' OR nome ILIKE '%%%s%%'" %
+                                         (self.edt_pessoa.get(), self.edt_pessoa.get()),
+                                  quantidade=(1,))
+            if dado:
+                self.cpf_pessoa = dado[0][0]
+                self.edt_pessoa.delete(0, 'end')
+                self.edt_pessoa.insert(0, dado[0][1])
+            else:
+                self.cpf_pessoa = ""
+
+                if askyesno("Atenção", "Deseja cadastrar a pessoa %s" % self.edt_pessoa.get()):
+                    pessoas = FrmPessoas(self, self.pessoas)
+                    if self.edt_pessoa.get()[0] in string.digits:
+                        pessoas.edt_cpf.delete(0, 'end')
+                        pessoas.edt_cpf.insert(0, self.edt_pessoa.get())
+                    else:
+                        pessoas.edt_nome.insert(0, self.edt_pessoa.get())
+
+                    # Se não fechar o form. FrmContas
+                    if not self.wait_window(pessoas):
+                        self.pesquisar_atribuir_pessoa()
+                else:
+                    self.edt_pessoa.delete(0, 'end')
+                    self.edt_pessoa.insert(0, self.desc_pessoa)
+
+    def pesquisar_atribuir_conta_destino(self):
+        if self.edt_transferencia.get() != self.desc_transf:
+            dado = self.pesquisar(self.contas, 'id', 'descricao',
+                                  filtro="descricao ILIKE '%%%s%%'" % self.edt_transferencia.get(),
+                                  quantidade=(1,))
+            print(bd_contas.dml)
+            if dado:
+                if self.id_conta == int(dado[0][0]):
+                    showinfo("Atenção", "Conta %s já está sendo usada como conta origem" % self.edt_conta.get())
+                    self.edt_transferencia.delete(0, 'end')
+                    self.edt_transferencia.insert(0, self.desc_transf)
+                else:
+                    self.id_transf = int(dado[0][0])
+                    self.edt_transferencia.delete(0, 'end')
+                    self.edt_transferencia.insert(0, dado[0][1])
+            else:
+                self.id_transf = 0
+
+                if askyesno("Atenção", "Deseja cadastrar a conta %s" % self.edt_transferencia.get()):
+                    contas = FrmContas(self, self.contas)
+                    contas.edt_descricao.insert(0, self.edt_conta.get())
+
+                    # Se não fechar o form. FrmContas
+                    if not self.wait_window(contas):
+                        self.pesquisar_atribuir_conta_destino()
+                else:
+                    self.edt_transferencia.delete(0, 'end')
+                    self.edt_transferencia.insert(0, self.desc_transf)
+
+    def pesquisar(self, tabela: Tabela, *campos, **kfiltro) -> str:
+        tabela.consultar(*campos, **kfiltro)
+        return tabela.exibir()
 
 
 class FrmPessoas(tk.Toplevel):
@@ -311,10 +652,7 @@ class FrmPessoas(tk.Toplevel):
         frame = ttk.Frame(self)
         frame.place(x=0, y=0, width=largura, height=altura)
 
-        # Variáveis
-
         # Componentes do formulário.
-        # VALIDAR CPF E RG # VALIDAR CPF E RG # VALIDAR CPF E RG # VALIDAR CPF E RG # VALIDAR CPF E RG #
         self.lbl_cpf = ttk.Label(frame, text="CPF")
         self.lbl_cpf.place(x=10, y=10, width=100, height=20)
 
@@ -379,11 +717,12 @@ class FrmPessoas(tk.Toplevel):
 
     def escrever_cpf(self, event):
         # report_event(event)
-        self._escrever_mascara_entry(event.char, self.edt_cpf, self.default_cpf)
+        self.escrever_mascara_entry(event.char, self.edt_cpf, self.default_cpf)
 
     @staticmethod
-    def _escrever_mascara_entry(evento_char, ref_entry: ttk.Entry, mascara: str, especial: str = ''):
-        """ Método para formatar a entrada de um Entry de acordo com mascara.
+    def escrever_mascara_entry(evento_char, ref_entry: ttk.Entry, mascara: str, especial: str = ''):
+        """ Método estático para formatar a entrada de um Entry de acordo com mascara.
+        Pode ser usado sem instanciação.
         :param evento_char: event.char do evento.
         :param ref_entry: Referência do componente Entry.
         :param mascara: Mascara base para a formatação. Deve apresentar espacos onde quer ser inseridos os números.
@@ -405,11 +744,12 @@ class FrmPessoas(tk.Toplevel):
 
     def escrever_cpf_release(self, event):
         # report_event(event)
-        self._apagar_caracter_invalido(event.char, self.edt_cpf, string.ascii_letters)
+        self.apagar_caracter_invalido(event.char, self.edt_cpf, string.ascii_letters)
 
     @staticmethod
-    def _apagar_caracter_invalido(evento_char, ref_entry: ttk.Entry, caracteres_inválidos: str):
-        """ Método para apagar os caracteres inseridos em um Entry no momento da digitação.
+    def apagar_caracter_invalido(evento_char, ref_entry: ttk.Entry, caracteres_inválidos: str):
+        """ Método estático para apagar os caracteres inseridos em um Entry no momento da digitação(evento Release).
+        Pode ser usado sem instanciação.
         :param evento_char: event.char do evento.
         :param ref_entry: Referência do componente Entry.
         :param caracteres_inválidos: string de caracteres que deseja-se que sejam apagados.
@@ -418,17 +758,17 @@ class FrmPessoas(tk.Toplevel):
             ref_entry.delete(len(ref_entry.get()) - 1, 'end')
 
     def escrever_rg(self, event):
-        self._escrever_mascara_entry(event.char, self.edt_rg, self.default_rg, especial='xX')
+        self.escrever_mascara_entry(event.char, self.edt_rg, self.default_rg, especial='xX')
 
     def escrever_rg_release(self, event):
         letras = string.ascii_letters.replace('X', '').replace('x', '')
-        self._apagar_caracter_invalido(event.char, self.edt_rg, letras)
+        self.apagar_caracter_invalido(event.char, self.edt_rg, letras)
 
     def carregar_dados(self):
         self.limpar_campos(default=False)
 
         self.edt_cpf.insert(0, self.dados_consulta[0])
-        self.edt_rg.insert(0, self.dados_consulta[1])
+        self.edt_rg.insert(0, self.default_rg if self.dados_consulta[1] == 'None' else self.dados_consulta[1])
         self.edt_nome.insert(0, self.dados_consulta[2])
         self.lbl_data_inclusao['text'] = converter_formato_data(self.dados_consulta[3])
 
@@ -442,9 +782,11 @@ class FrmPessoas(tk.Toplevel):
         nome = self.edt_nome.get()
 
         if not nome:
-            showwarning("Atenção", "Nome vazia")
+            showwarning("Atenção", "Nome vazio")
         elif not cpf:
             showwarning("Atenção", "CPF vazio")
+        elif not Cpf(cpf):
+            showwarning("Atenção", "CPF inválido")
         else:
             parametros = {'cpf': cpf,
                           'rg': rg,

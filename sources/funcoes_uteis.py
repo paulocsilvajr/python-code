@@ -6,6 +6,7 @@ from os import system, name
 from time import sleep
 from threading import Thread
 from datetime import datetime, timedelta
+import re
 
 __author__ = "Paulo C. Silva Jr"
 
@@ -234,6 +235,87 @@ def temporizador(*args, **kwargs):
     t.join()
 
 
+class Cpf:
+    """ Classe CPF. Baseado em <http://www.python.org.br/wiki/VerificadorDeCPF>. Adaptado para Python3. """
+    def __init__(self, cpf):
+        """O argumento cpf pode ser uma string nas formas:
+            12345678910
+            123.456.789-10
+        ou uma lista ou tuple:
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 0]
+            (1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 0) """
+        if isinstance(cpf, str):
+            if not cpf.isdigit():
+                cpf = self.translate(cpf)
+
+        self.cpf = [int(x) for x in cpf]
+
+    @staticmethod
+    def translate(cpf):
+        """ Traduz CPF com os separadores para somente números. """
+        return ''.join(re.findall("\d", cpf))
+
+    def _exceptions(self, cpf):
+        """ Exceções para invalidação de CPF. """
+        if len(cpf) != 11:
+            return True
+        else:
+            s = ''.join(str(x) for x in cpf)
+            if s == '00000000000' or s == '11111111111' or s == '22222222222' or s == '33333333333' or \
+                            s == '44444444444' or s == '55555555555' or s == '66666666666' or \
+                            s == '77777777777' or s == '88888888888' or s == '99999999999':
+                return True
+        return False
+
+    def _gen(self, cpf):
+        """ Gera o próximo dígito do número de CPF. """
+        res = []
+        for i, a in enumerate(cpf):
+            b = len(cpf) + 1 - i
+            res.append(b * a)
+
+        res = sum(res) % 11
+
+        if res > 1:
+            return 11 - res
+        else:
+            return 0
+
+    def __getitem__(self, index):
+        """ Retorna o dígito em index como string. """
+        return self.cpf[index]
+
+    def __repr__(self):
+        """ Retorna uma representação 'real', ou seja, eval(repr(cpf)) == cpf. """
+        return "CPF('%s')" % ''.join(str(x) for x in self.cpf)
+
+    def __eq__(self, other):
+        """Provê teste de igualdade para números de CPF. """
+        return isinstance(other, Cpf) and self.cpf == other.cpf
+
+    def __str__(self):
+        """Retorna uma representação do CPF na forma: 123.456.789-10. """
+        d = iter("..-")
+        s = list(map(str, self.cpf))
+        for i in range(3, 12, 4):
+            s.insert(i, d.next())
+        r = ''.join(s)
+        return r
+
+    def is_valid(self):
+        """Valida o número de cpf. """
+        if self._exceptions(self.cpf):
+            return False
+
+        s = self.cpf[:9]
+        s.append(self._gen(s))
+        s.append(self._gen(s))
+        return s == self.cpf[:]
+
+    def __bool__(self):
+        return self.is_valid()
+
+
 def converter_string_data(horario: str, formato="24hs", completo=False, ordenar=True) -> list:
     """ Conversão de string em datetime.
     :param horario: Horario(s). Separador por ',' caso seja informado em plural.
@@ -281,7 +363,7 @@ def converter_string_data(horario: str, formato="24hs", completo=False, ordenar=
 def pausar(mensagem='\nENTER para continuar '):
     while True:
         entrada = input(mensagem)
-        
+
         if not entrada:
             break
 
@@ -394,7 +476,7 @@ def report_event(event):
     event_name = {"2": "KeyPress", "3": "KeyRelease", "4": "ButtonPress"}
     print("Time:", str(event.time))
 
-    print("EventType=" + str(event.type),
+    print("EventType=" + str(event.type) + "=" +
           event_name[str(event.type)] if str(event.type) in event_name.keys() else "",
           "EventWidgetId=" + str(event.widget),
           "EventKeySymbol=" + str(event.keysym), "KeyChar(KeyPress/KeyRelease)=" + event.char, sep="\n")
@@ -406,6 +488,11 @@ def converter_formato_data(strdata: str) -> str:
     data = "{2}/{1}/{0}".format(*data.split('-'))
     hora = hora.split('.')[0]
     return data + " " + hora
+
+
+def data_atual(completo=True):
+    agora = datetime.now()
+    return agora, agora.strftime('%d/%m/%Y %H:%M:%S') if completo else agora.strftime('%d/%m/%Y')
 
 if __name__ == '__main__':
     # Teste em interface de texto.
