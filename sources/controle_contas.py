@@ -379,24 +379,24 @@ class FrmLancamentos(tk.Toplevel):
         self.edt_lancamento.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_lancamento)
         self.edt_lancamento.bind('<KeyRelease>', self.formatar_valor)
 
-        self.limpar_comp()
+        self.limpar_campos()
 
         # Botões
         self.btn_salvar = ttk.Button(frame, text="Salvar")
-        self.btn_salvar.bind('<Button-1>', self.salvar)
         self.btn_salvar.place(x=10, y=390, width=100, height=30)
+        self.btn_salvar.bind('<Button-1>', self.salvar)
 
         self.btn_limpar = ttk.Button(frame, text="Limpar")
         self.btn_limpar.place(x=120, y=390, width=100, height=30)
         self.btn_limpar.bind('<Button-1>', self.limpar)
 
         self.btn_excluir = ttk.Button(frame, text="Excluir")
-        self.btn_excluir.bind('<Button-1>', self.excluir)
         self.btn_excluir.place(x=230, y=390, width=100, height=30)
+        self.btn_excluir.bind('<Button-1>', self.excluir)
 
         self.btn_consultar = ttk.Button(frame, text="Consultar")
-        self.btn_consultar.bind('<Button-1>', self.consultar)
         self.btn_consultar.place(x=340, y=390, width=100, height=30)
+        self.btn_consultar.bind('<Button-1>', self.consultar)
 
         self.transient(root)
         self.focus_force()
@@ -413,49 +413,114 @@ class FrmLancamentos(tk.Toplevel):
 
     def salvar(self, event):
         pass
+        # cpf = "" if self.edt_cpf.get() == self.default_cpf else self.edt_cpf.get()
+        # rg = self.edt_rg.get()
+        # nome = self.edt_nome.get()
+        #
+        # if not nome:
+        #     showwarning("Atenção", "Nome vazio")
+        # elif not cpf:
+        #     showwarning("Atenção", "CPF vazio")
+        # elif not Cpf(cpf):
+        #     showwarning("Atenção", "CPF inválido")
+        # else:
+        #     parametros = {'cpf': cpf,
+        #                   'rg': rg,
+        #                   'nome': nome}
+        #
+        #     self.pessoas.consultar(filtro="cpf = '%s'" % cpf)
+        #     # cpf_cadastrado = self.pessoas.exibir()
+        #
+        #     if not self.pessoas.exibir():
+        #         self.pessoas.inserir(**parametros)
+        #
+        #         showinfo("Informação", "Cadastro realizado com sucesso")
+        #
+        #         self.limpar_campos()
+        #     else:
+        #         self.pessoas.atualizar(**parametros, filtro="cpf = '%s'" % cpf)
+        #
+        #         showinfo("Informação", "Atualização realizada com sucesso")
+        #
+        #         self.limpar_campos()
 
     def consultar(self, event):
-        # Usar vw_lancamentos_conta, já está com o join entre as tabelas.
-        pass
+        FrmConsultas(self, self.vw_lancamento_contas,
+                     'id', 'id_conta', 'descricao_conta', 'cpf', 'nome', 'data_vencimento',
+                     'data_pagamento', 'numero', 'descricao', 'transferencia',
+                     'descricao_transferencia', 'debito', 'credito', 'data_inclusao',
+                     cpf="= '%s'", nome="ILIKE '%%%s%%'", descricao_conta="ILIKE '%%%s%%'",
+                     descricao="ILIKE '%%%s%%'")
 
     def excluir(self, event):
-        pass
+        if self.id_lanc == 0:
+            showinfo("Atenção", "Consulte um registro para excluir")
+        elif askyesno("Atenção", "Deseja realmente excluir %s" % self.edt_descricao.get()):
+            self.lancamentos.excluir("id = %s" % self.id_lanc)
+
+            self.limpar_campos()
 
     def limpar(self, event):
-        self.limpar_comp()
+        self.limpar_campos()
 
-    def limpar_comp(self):
+    def limpar_campos(self, default=True):
         self.id_lanc = 0
         self.id_conta = 0
         self.cpf_pessoa = ""
         self.id_transf = 0
 
         self.edt_conta.delete(0, 'end')
-        self.edt_conta.insert(0, self.desc_conta)
+        if default:
+            self.edt_conta.insert(0, self.desc_conta)
 
         self.edt_pessoa.delete(0, 'end')
-        self.edt_pessoa.insert(0, self.desc_pessoa)
+        if default:
+            self.edt_pessoa.insert(0, self.desc_pessoa)
 
         self.edt_data_venc.delete(0, 'end')
-        self.edt_data_venc.insert(0, self.desc_dvenc)
+        if default:
+            self.edt_data_venc.insert(0, self.desc_dvenc)
 
         self.edt_data_pgto.delete(0, 'end')
-        self.edt_data_pgto.insert(0, self.desc_dpgto)
+        if default:
+            self.edt_data_pgto.insert(0, self.desc_dpgto)
 
         self.edt_numero.delete(0, 'end')
-        self.edt_numero.insert(0, self.desc_numero)
+        if default:
+            self.edt_numero.insert(0, self.desc_numero)
 
         self.edt_descricao.delete(0, 'end')
-        self.edt_descricao.insert(0, self.desc_descricao)
+        if default:
+            self.edt_descricao.insert(0, self.desc_descricao)
 
         self.edt_transferencia.delete(0, 'end')
-        self.edt_transferencia.insert(0, self.desc_transf)
+        if default:
+            self.edt_transferencia.insert(0, self.desc_transf)
 
         self.edt_lancamento.delete(0, 'end')
-        self.edt_lancamento.insert(0, self.desc_lanc)
+        if default:
+            self.edt_lancamento.insert(0, self.desc_lanc)
 
     def carregar_dados(self):
-        pass
+        self.limpar_campos(default=False)
+
+        # for i, valor in enumerate(self.dados_consulta):
+        #     print('[' + str(i) + ']', valor, type(valor))
+
+        self.id_lanc = self.dados_consulta[0]
+        self.id_conta = self.dados_consulta[1]
+        self.edt_conta.insert(0, self.dados_consulta[2])
+        self.cpf_pessoa = self.dados_consulta[3]
+        self.edt_pessoa.insert(0, self.dados_consulta[4])
+        self.edt_data_venc.insert(0, "" if self.dados_consulta[5] == 'None' else self.dados_consulta[5])
+        self.edt_data_pgto.insert(0, "" if self.dados_consulta[6] == 'None' else self.dados_consulta[6])
+        self.edt_numero.insert(0,  "" if self.dados_consulta[7] == 'None' else self.dados_consulta[7])
+        self.edt_descricao.insert(0, self.dados_consulta[8])
+        self.id_transf = self.dados_consulta[9]
+        self.edt_transferencia.insert(0, self.dados_consulta[10])
+        self.edt_lancamento.insert(0, abs(float(self.dados_consulta[11]) - float(self.dados_consulta[12])))
+
+        # print(self.id_lanc, self.id_conta, self.id_transf, sep='\n')
 
     def limpar_sob_foco_in_edt_conta(self, event):
         if self.edt_conta.get() == self.desc_conta:
@@ -485,7 +550,8 @@ class FrmLancamentos(tk.Toplevel):
         if self.edt_data_venc.get() == "":
             self.edt_data_venc.insert(0, self.desc_dvenc)
         elif self.edt_data_venc.get().lower() == "hoje":
-            self.edt_data_venc.insert(0, data_atual()[1])
+            self.edt_data_venc.delete(0, 'end')
+            self.edt_data_venc.insert(0, data_atual(False)[1])
 
     def limpar_sob_foco_in_edt_data_pgto(self, event):
         if self.edt_data_pgto.get() == self.desc_dpgto:
@@ -495,6 +561,7 @@ class FrmLancamentos(tk.Toplevel):
         if self.edt_data_pgto.get() == "":
             self.edt_data_pgto.insert(0, self.desc_dpgto)
         elif self.edt_data_pgto.get().lower() == "hoje":
+            self.edt_data_pgto.delete(0, 'end')
             self.edt_data_pgto.insert(0, data_atual()[1])
 
     def limpar_sob_foco_in_edt_numero(self, event):
@@ -837,9 +904,6 @@ class FrmPessoas(tk.Toplevel):
     def consultar(self, event):
         FrmConsultas(self, self.pessoas, 'cpf', 'rg', 'nome', 'data_inclusao',
                      cpf="= '%s'", nome="ILIKE '%%%s%%'", rg="= '%s'")
-
-    # A implementar.
-    pass
 
 
 class FrmConsultas(tk.Toplevel):

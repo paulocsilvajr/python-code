@@ -37,6 +37,14 @@
  	transferencia INT NOT NULL,
  	lancamento DECIMAL(9, 2),
  	data_inclusao TIMESTAMP NOT NULL DEFAULT now());
+-- /* alter table lancamentos drop column id_origem */
+ ALTER TABLE lancamentos
+ ADD COLUMN id_origem INT NULL;
+-- /* ALTER TABLE lancamentos DROP constraint "fk_id_origem" */
+ ALTER TABLE lancamentos
+ ADD CONSTRAINT "fk_id_origem" FOREIGN KEY(id_origem)
+ REFERENCES lancamentos(id)
+ ON UPDATE CASCADE ON DELETE CASCADE;
 -- 
  ALTER TABLE lancamentos
  ADD CONSTRAINT "fk_cpf" FOREIGN KEY(cpf)
@@ -102,6 +110,7 @@
  RETURNS void AS $$
  DECLARE
  	tipo CHAR(1);
+ 	var_id_origem INT;
  BEGIN
  	if padrao = TRUE THEN
  		tipo := (SELECT lancamento_padrao FROM contas WHERE id = id_conta);
@@ -109,46 +118,53 @@
  			lancamento := -lancamento;
  		END IF;
  	END IF;
--- 	
--- 	INSERT INTO lancamentos(
--- 		id_conta,
--- 		cpf,
--- 		data_vencimento,
--- 		data_pagamento,
--- 		numero,
--- 		descricao,
--- 		transferencia,
--- 		lancamento
--- 	) VALUES (
--- 		id_conta,
--- 		cpf,
--- 		data_vencimento,
--- 		data_pagamento,
--- 		numero,
--- 		descricao,
--- 		transferencia,
--- 		lancamento);
--- 
--- 	INSERT INTO lancamentos(
--- 		id_conta,
--- 		cpf,
--- 		data_vencimento,
--- 		data_pagamento,
--- 		numero,
--- 		descricao,
--- 		transferencia,
--- 		lancamento
--- 	) VALUES (
--- 		transferencia,
--- 		cpf,
--- 		data_vencimento,
--- 		data_pagamento,
--- 		numero,
--- 		descricao,
--- 		id_conta,
--- 		-lancamento);
--- END;
--- $$ LANGUAGE plpgsql;
+	
+	INSERT INTO lancamentos(
+		id_conta,
+		cpf,
+		data_vencimento,
+		data_pagamento,
+		numero,
+		descricao,
+		transferencia,
+		lancamento
+	) VALUES (
+		id_conta,
+		cpf,
+		data_vencimento,
+		data_pagamento,
+		numero,
+		descricao,
+		transferencia,
+		lancamento);
+
+	var_id_origem := (SELECT MAX(id) FROM lancamentos);
+	INSERT INTO lancamentos(
+		id_conta,
+		cpf,
+		data_vencimento,
+		data_pagamento,
+		numero,
+		descricao,
+		transferencia,
+		lancamento,
+		id_origem
+	) VALUES (
+		transferencia,
+		cpf,
+		data_vencimento,
+		data_pagamento,
+		numero,
+		descricao,
+		id_conta,
+		-lancamento,
+		var_id_origem);
+
+	UPDATE lancamentos 
+	SET id_origem = (var_id_origem + 1)
+	WHERE id = var_id_origem;
+END;
+$$ LANGUAGE plpgsql;
 
 /* Lançamentos teste */
 -- 
@@ -185,5 +201,4 @@
 -- SELECT inserir_lancamento(8, '364.388.708-62', NULL, '04/07/2016', '01', 'teste01', 6, 800, TRUE);
 -- SELECT * FROM vw_lancamento_contas ORDER BY data_inclusao;
 -- SELECT * FROM lancamentos;	
-
 -- SELECT * FROM vw_lancamento_contas WHERE id_conta = 6 ORDER BY data_inclusao;
