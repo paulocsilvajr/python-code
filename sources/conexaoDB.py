@@ -101,7 +101,6 @@ class Conexao:
         assert isinstance(valores, str), "Formato do parâmetro valores inválido"
 
         self.executar("INSERT INTO %s(%s) VALUES(%s)" % (tabela, campos, valores))
-        self._conexao.commit()
 
         self._historico_crud("Inserido", tabela, "%s = %s" % (campos, valores))
 
@@ -114,7 +113,6 @@ class Conexao:
         assert isinstance(filtro, str), "Formato do parâmetro filtro inválido"
 
         self.executar("DELETE FROM %s WHERE %s" % (tabela, filtro))
-        self._conexao.commit()
 
         self._historico_crud("Excluído", tabela, filtro)
 
@@ -138,12 +136,11 @@ class Conexao:
                 elementos += "%s=%s%s" % (campos[i], valores[i], (", " if i < len(campos) - 1 else ""))
 
             self.executar("UPDATE %s SET %s%s" % (tabela, elementos, (" WHERE " + filtro if filtro else "")))
-            self._conexao.commit()
 
             self._historico_crud("Atualizado", tabela, filtro)
 
     def criar_tabela(self, nome: str, campos: str):
-        """ Função para criação de tabelas do BD conectado.
+        """ Função para criação de tabelas no BD conectado.
         :param nome: string: nome da tabela.
         :param campos: string: nome dos campos. Ex: nome tipo chave primaria não nulo, nome tipo ...
         :return: None. """
@@ -151,9 +148,8 @@ class Conexao:
         assert isinstance(campos, str), "Formato do parâmetro campos inválido"
 
         self.executar("CREATE TABLE %s(%s)" % (nome, campos))
-        self._conexao.commit()
 
-    def executar(self, dml: str):
+    def executar(self, dml: str, autocommit=True):
         """ Função base para execução de SQL no BD.
         :param dml: string: intrução SQL.
         :return: retorna self._conexao.cursor(), caso a instrução SQL for válida,
@@ -162,6 +158,8 @@ class Conexao:
             assert isinstance(dml, str), "Formato do parâmetro dml inválido"
             self.dml = dml
             self._cursor.execute(dml)
+            if autocommit:
+                self._conexao.commit()
             return self._cursor
         except self._excecao:
             print(exc_info()[1])
@@ -173,6 +171,7 @@ class Conexao:
 
         if self._dbms == 'postgresql':
             self._cursor.callproc(dml, parametros)
+            self._conexao.commit()
             return self._cursor
         return None
 
@@ -290,7 +289,8 @@ class Tabela:
             for i, valor in enumerate(kwargs.values(), start=1):
                 separador = ', ' if i < len(kwargs) else ''
 
-                if isinstance(valor, str):
+                if isinstance(valor, str) and \
+                                valor != 'NULL' and valor != 'TRUE' and valor != 'FALSE':
                     valores += "'{}'{}".format(valor, separador)
                 else:
                     valores += "{}{}".format(valor, separador)
@@ -314,7 +314,8 @@ class Tabela:
             for i, valor in enumerate(kwargs.values(), start=1):
                 separador = ', ' if i < len(kwargs) else ''
 
-                if isinstance(valor, str):
+                if isinstance(valor, str) and \
+                                valor != 'NULL' and valor != 'TRUE' and valor != 'FALSE':
                     valores += "'{}'{}".format(valor, separador)
                 else:
                     valores += "{}{}".format(valor, separador)

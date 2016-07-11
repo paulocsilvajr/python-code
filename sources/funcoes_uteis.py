@@ -482,12 +482,24 @@ def report_event(event):
           "EventKeySymbol=" + str(event.keysym), "KeyChar(KeyPress/KeyRelease)=" + event.char, sep="\n")
 
 
-def converter_formato_data(strdata: str) -> str:
+def converter_formato_data(strdata: str, masc_data="{2}/{1}/{0}", sep_data="-") -> str:
+    """ Conversão de data no formato da mascara informado.
+    0: ano, 1: mês, 2: ano.
+    hora no formato H:M:S"""
+    if len(strdata) > 10:
+        completo = True
+    else:
+        completo = False
+
     data = strdata.split(' ')
-    data, hora = data[0], data[1]
-    data = "{2}/{1}/{0}".format(*data.split('-'))
-    hora = hora.split('.')[0]
-    return data + " " + hora
+    if completo:
+        data, hora = data[0], data[1]
+    else:
+        data = data[0]
+
+    hora = "" if not completo else hora.split('.')[0]
+    data = masc_data.format(*data.split(sep_data))
+    return data + ((" " + hora) if completo else "")
 
 
 def data_atual(completo=True):

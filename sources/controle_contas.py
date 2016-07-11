@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter.messagebox import showinfo, showwarning, askyesno
 import string
+from collections import OrderedDict
 from datetime import datetime
 
 __author__ = "Paulo C. Silva Jr."
@@ -320,9 +321,41 @@ class FrmLancamentos(tk.Toplevel):
         frame = ttk.Frame(self)
         frame.place(x=0, y=0, width=largura, height=altura)
 
-        # Componentes
+        # Consulta base para inicializar treeview.
+        self.quant_reg_consultados = 0
+
+        self.campos_treeview = ('descricao_conta', 'nome', 'data_pagamento', 'numero', 'descricao',
+                                'descricao_transferencia', 'debito', 'credito')
+
+        self.vw_lancamento_contas.consultar(*self.campos_treeview)
+        self.dados = self.vw_lancamento_contas.exibir()
+
+        # treeview -> "grid"
+        self.dataCols = self.campos_treeview
+        self.tree = ttk.Treeview(frame, columns=self.dataCols, show='headings')
+        self.tree.place(x=10, y=10, width=1029, height=320)
+
+        # Barras de rolagem
+        ysb = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=self.tree.yview)
+        xsb = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=self.tree.xview)
+        self.tree['yscroll'] = ysb.set
+        self.tree['xscroll'] = xsb.set
+        ysb.place(x=1034, y=10, width=20, height=315)
+        xsb.place(x=10, y=325, width=1024, height=20)
+
+        # Define o textos do cabeçalho (nome em maiúsculas)
+        for c in self.dataCols:
+            self.tree.heading(c, text=c.title())
+
+        # Insere cada item dos dados
+        self.alimentar_treeview()
+
+        self.tree.bind('<Double-1>', self.carregar_dados)
+
+        # Componentes para manipulação de dados
         self.id_lanc = 0
         self.id_conta = 0
+        self.lanc_padra_conta = ''
         self.cpf_pessoa = ""
         self.id_transf = 0
 
@@ -408,41 +441,70 @@ class FrmLancamentos(tk.Toplevel):
         self.bind('<Alt-l>', self.limpar)
         self.bind('<Alt-c>', self.consultar)
 
+    def alimentar_treeview(self):
+        cont = 0
+        for i, item in enumerate(self.dados, start=1):
+            cont = i
+            self.tree.insert('', 'end', str(i), values=item)
+        self.quant_reg_consultados = cont
+
     def fechar(self, event):
         self.destroy()
 
     def salvar(self, event):
-        pass
-        # cpf = "" if self.edt_cpf.get() == self.default_cpf else self.edt_cpf.get()
-        # rg = self.edt_rg.get()
-        # nome = self.edt_nome.get()
-        #
-        # if not nome:
-        #     showwarning("Atenção", "Nome vazio")
-        # elif not cpf:
-        #     showwarning("Atenção", "CPF vazio")
-        # elif not Cpf(cpf):
-        #     showwarning("Atenção", "CPF inválido")
-        # else:
-        #     parametros = {'cpf': cpf,
-        #                   'rg': rg,
-        #                   'nome': nome}
-        #
-        #     self.pessoas.consultar(filtro="cpf = '%s'" % cpf)
-        #     # cpf_cadastrado = self.pessoas.exibir()
-        #
-        #     if not self.pessoas.exibir():
-        #         self.pessoas.inserir(**parametros)
-        #
-        #         showinfo("Informação", "Cadastro realizado com sucesso")
-        #
-        #         self.limpar_campos()
-        #     else:
-        #         self.pessoas.atualizar(**parametros, filtro="cpf = '%s'" % cpf)
-        #
-        #         showinfo("Informação", "Atualização realizada com sucesso")
-        #
-        #         self.limpar_campos()
+        if self.edt_data_venc.get() == self.desc_dvenc:
+            data_venc = converter_formato_data(data_atual()[1], masc_data="{2}-{1}-{0}", sep_data="/")
+        else:
+            data_venc = converter_formato_data(self.edt_data_venc.get(),
+                                               masc_data="{2}-{1}-{0}", sep_data="/")
+        if self.edt_data_pgto.get() == self.desc_dpgto:
+            data_pgto = converter_formato_data(data_atual()[1], masc_data="{2}-{1}-{0}", sep_data="/")
+        else:
+            data_pgto = converter_formato_data(self.edt_data_pgto.get(),
+                                               masc_data="{2}-{1}-{0}", sep_data="/")
+        n_conta = "" if self.edt_numero.get() == self.desc_numero else self.edt_numero.get()
+        descricao = format(self.edt_descricao.get())
+        valor = float(self.edt_lancamento.get()) if self.edt_lancamento != self.desc_lanc else 0
+
+        if not self.cpf_pessoa:
+            showwarning("Atenção", "Nome pessoa vazio")
+        elif not self.id_conta:
+            showwarning("Atenção", "Conta origem vazia")
+        elif not self.id_transf:
+            showwarning("Atenção", "Conta destino vazia")
+        elif descricao == self.desc_descricao:
+            showwarning("Atenção", "Descrição vazia")
+        elif valor == 0:
+            showwarning("Atenção", "Valor vazio")
+        else:
+            parametros = OrderedDict()
+            parametros['id_conta'] = self.id_conta
+            parametros['cpf'] = self.cpf_pessoa
+            parametros['data_vencimento'] = data_venc
+            parametros['data_pagamento'] = data_pgto
+            parametros['numero'] = n_conta
+            parametros['descricao'] = descricao
+            parametros['transferencia'] = self.id_transf
+            parametros['lancamento'] = valor
+            parametros['padrao'] = 'TRUE'
+
+            self.lancamentos.consultar(filtro="id = %s" % self.id_lanc)
+            lanc_cadastrado = self.pessoas.exibir()
+
+            if not lanc_cadastrado:
+                bd_contas.executar("SELECT inserir_lancamento({},'{}','{}','{}','{}','{}',{},{},{})".format(
+                                   *parametros.values()))
+
+                showinfo("Informação", "Cadastro realizado com sucesso")
+
+                self.limpar_campos()
+            else:
+                parametros.pop('padrao')
+                self.lancamentos.atualizar(**parametros, filtro="id = %s" % self.id_lanc)
+
+                showinfo("Informação", "Atualização realizada com sucesso")
+
+                self.limpar_campos()
 
     def consultar(self, event):
         FrmConsultas(self, self.vw_lancamento_contas,
@@ -502,25 +564,23 @@ class FrmLancamentos(tk.Toplevel):
             self.edt_lancamento.insert(0, self.desc_lanc)
 
     def carregar_dados(self):
+        print(self.dados_consulta)
         self.limpar_campos(default=False)
-
-        # for i, valor in enumerate(self.dados_consulta):
-        #     print('[' + str(i) + ']', valor, type(valor))
 
         self.id_lanc = self.dados_consulta[0]
         self.id_conta = self.dados_consulta[1]
         self.edt_conta.insert(0, self.dados_consulta[2])
         self.cpf_pessoa = self.dados_consulta[3]
         self.edt_pessoa.insert(0, self.dados_consulta[4])
-        self.edt_data_venc.insert(0, "" if self.dados_consulta[5] == 'None' else self.dados_consulta[5])
-        self.edt_data_pgto.insert(0, "" if self.dados_consulta[6] == 'None' else self.dados_consulta[6])
-        self.edt_numero.insert(0,  "" if self.dados_consulta[7] == 'None' else self.dados_consulta[7])
+        self.edt_data_venc.insert(0, self.desc_dvenc if self.dados_consulta[5] == 'None'
+                                  else converter_formato_data(self.dados_consulta[5]))
+        self.edt_data_pgto.insert(0, self.desc_dpgto if self.dados_consulta[6] == 'None'
+                                  else converter_formato_data(self.dados_consulta[6]))
+        self.edt_numero.insert(0,  self.desc_numero if self.dados_consulta[7] == 'None' else self.dados_consulta[7])
         self.edt_descricao.insert(0, self.dados_consulta[8])
         self.id_transf = self.dados_consulta[9]
         self.edt_transferencia.insert(0, self.dados_consulta[10])
-        self.edt_lancamento.insert(0, abs(float(self.dados_consulta[11]) - float(self.dados_consulta[12])))
-
-        # print(self.id_lanc, self.id_conta, self.id_transf, sep='\n')
+        self.edt_lancamento.insert(0, float(self.dados_consulta[11]) - float(self.dados_consulta[12]))
 
     def limpar_sob_foco_in_edt_conta(self, event):
         if self.edt_conta.get() == self.desc_conta:
@@ -541,6 +601,7 @@ class FrmLancamentos(tk.Toplevel):
             self.edt_pessoa.insert(0, self.desc_pessoa)
         else:
             self.pesquisar_atribuir_pessoa()
+            self.atualizar_treeview()
 
     def limpar_sob_foco_in_edt_data_venc(self, event):
         if self.edt_data_venc.get() == self.desc_dvenc:
@@ -600,15 +661,17 @@ class FrmLancamentos(tk.Toplevel):
 
     def pesquisar_atribuir_conta_origem(self):
         if self.edt_conta.get() != self.desc_conta:
-            dado = self.pesquisar(self.contas, 'id', 'descricao',
+            dado = self.pesquisar(self.contas, 'id', 'descricao', 'lancamento_padrao',
                                   filtro="descricao ILIKE '%%%s%%'" % self.edt_conta.get(),
                                   quantidade=(1,))
             if dado:
                 self.id_conta = int(dado[0][0])
                 self.edt_conta.delete(0, 'end')
                 self.edt_conta.insert(0, dado[0][1])
+                self.lanc_padra_conta = dado[0][2]
             else:
                 self.id_conta = 0
+                self.lanc_padra_conta = ''
 
                 if askyesno("Atenção", "Deseja cadastrar a conta %s" % self.edt_conta.get()):
                     contas = FrmContas(self, self.contas)
@@ -620,6 +683,20 @@ class FrmLancamentos(tk.Toplevel):
                 else:
                     self.edt_conta.delete(0, 'end')
                     self.edt_conta.insert(0, self.desc_conta)
+
+    def atualizar_treeview(self):
+        for i in range(1, self.quant_reg_consultados + 1):
+            self.tree.delete(str(i))
+
+        if self.id_conta != 0 and self.cpf_pessoa != "":
+            self.vw_lancamento_contas.consultar(*self.campos_treeview,
+                                                filtro="id_conta = %s AND cpf = '%s'" % (self.id_conta, self.cpf_pessoa))
+        else:
+            self.vw_lancamento_contas.consultar(*self.campos_treeview)
+
+        self.dados = self.vw_lancamento_contas.exibir()
+
+        self.alimentar_treeview()
 
     def formatar_cpf(self, event):
         if event.char in string.digits:
@@ -636,7 +713,7 @@ class FrmLancamentos(tk.Toplevel):
     def formatar_valor(self, event):
         FrmPessoas.apagar_caracter_invalido(event.char, self.edt_lancamento,
                                             (string.ascii_letters +
-                                             string.punctuation.replace('.', '').replace(',', '') +
+                                             string.punctuation.replace('.', '').replace(',', '').replace('-', '') +
                                              ' '))
         if event.char == ',':
             self.edt_lancamento.delete(len(self.edt_lancamento.get()) - 1, 'end')
@@ -673,9 +750,10 @@ class FrmLancamentos(tk.Toplevel):
     def pesquisar_atribuir_conta_destino(self):
         if self.edt_transferencia.get() != self.desc_transf:
             dado = self.pesquisar(self.contas, 'id', 'descricao',
-                                  filtro="descricao ILIKE '%%%s%%'" % self.edt_transferencia.get(),
+                                  filtro="descricao ILIKE '%%%s%%' and lancamento_padrao <> '%s'" %
+                                         (self.edt_transferencia.get(), self.lanc_padra_conta),
                                   quantidade=(1,))
-            print(bd_contas.dml)
+            # print(bd_contas.dml)
             if dado:
                 if self.id_conta == int(dado[0][0]):
                     showinfo("Atenção", "Conta %s já está sendo usada como conta origem" % self.edt_conta.get())
@@ -845,7 +923,10 @@ class FrmPessoas(tk.Toplevel):
     def salvar(self, event):
         """ Evento para salvar e modificar registros. """
         cpf = "" if self.edt_cpf.get() == self.default_cpf else self.edt_cpf.get()
-        rg = self.edt_rg.get()
+        if self.edt_rg.get() == self.default_rg or self.edt_rg.get() == "":
+            rg = "NULL"
+        else:
+            rg = self.edt_rg.get()
         nome = self.edt_nome.get()
 
         if not nome:
@@ -860,9 +941,9 @@ class FrmPessoas(tk.Toplevel):
                           'nome': nome}
 
             self.pessoas.consultar(filtro="cpf = '%s'" % cpf)
-            # cpf_cadastrado = self.pessoas.exibir()
+            cpf_cadastrado = self.pessoas.exibir()
 
-            if not self.pessoas.exibir():
+            if not cpf_cadastrado:
                 self.pessoas.inserir(**parametros)
 
                 showinfo("Informação", "Cadastro realizado com sucesso")
