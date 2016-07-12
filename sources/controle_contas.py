@@ -176,21 +176,25 @@ class FrmContas(tk.Toplevel):
 
         # Botões
         self.btn_salvar = ttk.Button(frame, text="Salvar")
-        self.btn_salvar.bind('<Button-1>', self.salvar)
         self.btn_salvar.place(x=10, y=160, width=100, height=30)
 
         self.btn_limpar = ttk.Button(frame, text="Limpar")
         self.btn_limpar.place(x=120, y=160, width=100, height=30)
-        self.btn_limpar.bind('<Button-1>', self.limpar)
 
         self.btn_excluir = ttk.Button(frame, text="Excluir")
-        self.btn_excluir.bind('<Button-1>', self.excluir)
         self.btn_excluir.place(x=230, y=160, width=100, height=30)
 
         self.btn_consultar = ttk.Button(frame, text="Consultar")
-        self.btn_consultar.bind('<Button-1>', self.consultar)
         self.btn_consultar.place(x=340, y=160, width=100, height=30)
 
+        self.btn_salvar.bind('<Button-1>', self.salvar)
+        self.btn_salvar.bind('<space>', self.salvar)
+        self.btn_limpar.bind('<Button-1>', self.limpar)
+        self.btn_limpar.bind('<space>', self.limpar)
+        self.btn_excluir.bind('<Button-1>', self.excluir)
+        self.btn_excluir.bind('<space>', self.excluir)
+        self.btn_consultar.bind('<Button-1>', self.consultar)
+        self.btn_consultar.bind('<space>', self.consultar)
         # Definição do posicionamento ref. ao form. origem e definição de form. em foco.
         self.transient(root)
         self.focus_force()
@@ -228,18 +232,18 @@ class FrmContas(tk.Toplevel):
                               'conta_pai': conta_pai,
                               'lancamento_padrao': lancamento_padrao}
 
-        if id == self.default_id:
-            self.contas.inserir(**parametros)
+            if id == self.default_id:
+                self.contas.inserir(**parametros)
 
-            showinfo("Informação", "Cadastro realizado com sucesso")
+                showinfo("Informação", "Cadastro realizado com sucesso")
 
-            self.limpar_campos()
-        else:
-            self.contas.atualizar(**parametros, filtro='id = %d' % id)
+                self.limpar_campos()
+            else:
+                self.contas.atualizar(**parametros, filtro='id = %d' % id)
 
-            showinfo("Informação", "Atualização realizada com sucesso")
+                showinfo("Informação", "Atualização realizada com sucesso")
 
-            self.limpar_campos()
+                self.limpar_campos()
 
     def excluir(self, event):
         """ Evento de exclusão de registro. """
@@ -330,10 +334,14 @@ class FrmLancamentos(tk.Toplevel):
         self.vw_lancamento_contas.consultar(*self.campos_treeview)
         self.dados = self.vw_lancamento_contas.exibir()
 
-        # treeview -> "grid"
-        self.dataCols = self.campos_treeview
+        # Treeview -> "grid"
+        self.dataCols = self.campos_treeview + ('saldo',)
         self.tree = ttk.Treeview(frame, columns=self.dataCols, show='headings')
         self.tree.place(x=10, y=10, width=1029, height=320)
+
+        # Definindo largura das colunas
+        for col in self.dataCols:
+            self.tree.column(col, width=10)
 
         # Barras de rolagem
         ysb = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=self.tree.yview)
@@ -344,18 +352,20 @@ class FrmLancamentos(tk.Toplevel):
         xsb.place(x=10, y=325, width=1024, height=20)
 
         # Define o textos do cabeçalho (nome em maiúsculas)
+        # o parametro chave text modifica o nome visual da coluna.
         for c in self.dataCols:
             self.tree.heading(c, text=c.title())
 
+        # Não é necessário alimentar a treeview nessa etapa porque é invocado
+        # o método limpar após a criação dos componentes do formulário,
+        # que além de "zerar" todos os compomentes, atualiza a treeview.
         # Insere cada item dos dados
-        self.alimentar_treeview()
-
-        self.tree.bind('<Double-1>', self.carregar_dados)
+        # self.alimentar_treeview()
 
         # Componentes para manipulação de dados
         self.id_lanc = 0
         self.id_conta = 0
-        self.lanc_padra_conta = ''
+        self.lanc_padrao_conta = ''
         self.cpf_pessoa = ""
         self.id_transf = 0
 
@@ -363,76 +373,92 @@ class FrmLancamentos(tk.Toplevel):
         self.edt_conta = ttk.Entry(frame)
         self.edt_conta.place(x=10, y=350, width=150, height=30)
         self.edt_conta.focus_force()
-        self.edt_conta.bind('<FocusIn>', self.limpar_sob_foco_in_edt_conta)
-        self.edt_conta.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_conta)
 
         self.desc_pessoa = "Nome pessoa"
         self.edt_pessoa = ttk.Entry(frame)
         self.edt_pessoa.place(x=162, y=350, width=150, height=30)
-        self.edt_pessoa.bind('<FocusIn>', self.limpar_sob_foco_in_edt_pessoa)
-        self.edt_pessoa.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_pessoa)
-        self.edt_pessoa.bind('<KeyPress>', self.formatar_cpf)
 
         self.desc_dvenc = "Data vencimento"
         self.edt_data_venc = ttk.Entry(frame)
         self.edt_data_venc.place(x=314, y=350, width=90, height=30)
-        self.edt_data_venc.bind('<FocusIn>', self.limpar_sob_foco_in_edt_data_venc)
-        self.edt_data_venc.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_data_venc)
-        self.edt_data_venc.bind('<KeyPress>', self.formatar_data_venc)
 
         self.desc_dpgto = "Data pagamento"
         self.edt_data_pgto = ttk.Entry(frame)
         self.edt_data_pgto.place(x=406, y=350, width=90, height=30)
-        self.edt_data_pgto.bind('<FocusIn>', self.limpar_sob_foco_in_edt_data_pgto)
-        self.edt_data_pgto.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_data_pgto)
-        self.edt_data_pgto.bind('<KeyPress>', self.formatar_data_pgto)
 
         self.desc_numero = "Número conta"
         self.edt_numero = ttk.Entry(frame)
         self.edt_numero.place(x=498, y=350, width=100, height=30)
-        self.edt_numero.bind('<FocusIn>', self.limpar_sob_foco_in_edt_numero)
-        self.edt_numero.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_numero)
 
         self.desc_descricao = "Descrição"
         self.edt_descricao = ttk.Entry(frame)
         self.edt_descricao.place(x=600, y=350, width=150, height=30)
-        self.edt_descricao.bind('<FocusIn>', self.limpar_sob_foco_in_edt_descricao)
-        self.edt_descricao.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_descricao)
 
         self.desc_transf = "Conta destino"
         self.edt_transferencia = ttk.Entry(frame)
         self.edt_transferencia.place(x=752, y=350, width=150, height=30)
-        self.edt_transferencia.bind('<FocusIn>', self.limpar_sob_foco_in_edt_transferencia)
-        self.edt_transferencia.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_transferencia)
 
         self.desc_lanc = "Valor conta"
         self.edt_lancamento = ttk.Entry(frame)
         self.edt_lancamento.place(x=904, y=350, width=150, height=30)
-        self.edt_lancamento.bind('<FocusIn>', self.limpar_sob_foco_in_edt_lancamento)
-        self.edt_lancamento.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_lancamento)
-        self.edt_lancamento.bind('<KeyRelease>', self.formatar_valor)
 
         self.limpar_campos()
 
         # Botões
         self.btn_salvar = ttk.Button(frame, text="Salvar")
         self.btn_salvar.place(x=10, y=390, width=100, height=30)
-        self.btn_salvar.bind('<Button-1>', self.salvar)
 
         self.btn_limpar = ttk.Button(frame, text="Limpar")
         self.btn_limpar.place(x=120, y=390, width=100, height=30)
-        self.btn_limpar.bind('<Button-1>', self.limpar)
 
         self.btn_excluir = ttk.Button(frame, text="Excluir")
         self.btn_excluir.place(x=230, y=390, width=100, height=30)
-        self.btn_excluir.bind('<Button-1>', self.excluir)
 
         self.btn_consultar = ttk.Button(frame, text="Consultar")
         self.btn_consultar.place(x=340, y=390, width=100, height=30)
+
+        # Eventos dos componentes
+        self.edt_conta.bind('<FocusIn>', self.limpar_sob_foco_in_edt_conta)
+        self.edt_conta.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_conta)
+
+        self.edt_pessoa.bind('<FocusIn>', self.limpar_sob_foco_in_edt_pessoa)
+        self.edt_pessoa.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_pessoa)
+        self.edt_pessoa.bind('<KeyPress>', self.formatar_cpf)
+
+        self.edt_data_venc.bind('<FocusIn>', self.limpar_sob_foco_in_edt_data_venc)
+        self.edt_data_venc.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_data_venc)
+        self.edt_data_venc.bind('<KeyPress>', self.formatar_data_venc)
+
+        self.edt_data_pgto.bind('<FocusIn>', self.limpar_sob_foco_in_edt_data_pgto)
+        self.edt_data_pgto.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_data_pgto)
+        self.edt_data_pgto.bind('<KeyPress>', self.formatar_data_pgto)
+
+        self.edt_numero.bind('<FocusIn>', self.limpar_sob_foco_in_edt_numero)
+        self.edt_numero.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_numero)
+
+        self.edt_descricao.bind('<FocusIn>', self.limpar_sob_foco_in_edt_descricao)
+        self.edt_descricao.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_descricao)
+
+        self.edt_transferencia.bind('<FocusIn>', self.limpar_sob_foco_in_edt_transferencia)
+        self.edt_transferencia.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_transferencia)
+
+        self.edt_lancamento.bind('<FocusIn>', self.limpar_sob_foco_in_edt_lancamento)
+        self.edt_lancamento.bind('<FocusOut>', self.preencher_descricao_foco_out_edt_lancamento)
+        self.edt_lancamento.bind('<KeyRelease>', self.formatar_valor)
+
+        self.btn_salvar.bind('<Button-1>', self.salvar)
+        self.btn_salvar.bind('<space>', self.salvar)
+        self.btn_limpar.bind('<Button-1>', self.limpar)
+        self.btn_limpar.bind('<space>', self.limpar)
+        self.btn_excluir.bind('<Button-1>', self.excluir)
+        self.btn_excluir.bind('<space>', self.excluir)
         self.btn_consultar.bind('<Button-1>', self.consultar)
+        self.btn_consultar.bind('<space>', self.consultar)
 
         self.transient(root)
         self.focus_force()
+
+
 
         # Eventos do formulário.
         self.bind('<Escape>', self.fechar)
@@ -443,9 +469,15 @@ class FrmLancamentos(tk.Toplevel):
 
     def alimentar_treeview(self):
         cont = 0
+        saldo = 0
         for i, item in enumerate(self.dados, start=1):
+            # indice[6]=débito/ativo/bens e direitos, indice[7]=crédito/passivo/obrigações:
+            saldo += item[6] - item[7]
+            item += (saldo,)
+
             cont = i
             self.tree.insert('', 'end', str(i), values=item)
+
         self.quant_reg_consultados = cont
 
     def fechar(self, event):
@@ -464,7 +496,7 @@ class FrmLancamentos(tk.Toplevel):
                                                masc_data="{2}-{1}-{0}", sep_data="/")
         n_conta = "" if self.edt_numero.get() == self.desc_numero else self.edt_numero.get()
         descricao = format(self.edt_descricao.get())
-        valor = float(self.edt_lancamento.get()) if self.edt_lancamento != self.desc_lanc else 0
+        valor = 0 if self.edt_lancamento.get() == self.desc_lanc else float(self.edt_lancamento.get())
 
         if not self.cpf_pessoa:
             showwarning("Atenção", "Nome pessoa vazio")
@@ -493,7 +525,7 @@ class FrmLancamentos(tk.Toplevel):
 
             if not lanc_cadastrado:
                 bd_contas.executar("SELECT inserir_lancamento({},'{}','{}','{}','{}','{}',{},{},{})".format(
-                                   *parametros.values()))
+                    *parametros.values()))
 
                 showinfo("Informação", "Cadastro realizado com sucesso")
 
@@ -507,12 +539,15 @@ class FrmLancamentos(tk.Toplevel):
                 self.limpar_campos()
 
     def consultar(self, event):
-        FrmConsultas(self, self.vw_lancamento_contas,
-                     'id', 'id_conta', 'descricao_conta', 'cpf', 'nome', 'data_vencimento',
-                     'data_pagamento', 'numero', 'descricao', 'transferencia',
-                     'descricao_transferencia', 'debito', 'credito', 'data_inclusao',
-                     cpf="= '%s'", nome="ILIKE '%%%s%%'", descricao_conta="ILIKE '%%%s%%'",
-                     descricao="ILIKE '%%%s%%'")
+        consultas = FrmConsultas(self, self.vw_lancamento_contas,
+                                 'id', 'id_conta', 'descricao_conta', 'cpf', 'nome', 'data_vencimento',
+                                 'data_pagamento', 'numero', 'descricao', 'transferencia',
+                                 'descricao_transferencia', 'debito', 'credito', 'data_inclusao',
+                                 cpf="= '%s'", nome="ILIKE '%%%s%%'", descricao_conta="ILIKE '%%%s%%'",
+                                 descricao="ILIKE '%%%s%%'")
+        if not self.wait_window(consultas):
+            self.atualizar_treeview()
+
 
     def excluir(self, event):
         if self.id_lanc == 0:
@@ -563,8 +598,9 @@ class FrmLancamentos(tk.Toplevel):
         if default:
             self.edt_lancamento.insert(0, self.desc_lanc)
 
+        self.atualizar_treeview()
+
     def carregar_dados(self):
-        print(self.dados_consulta)
         self.limpar_campos(default=False)
 
         self.id_lanc = self.dados_consulta[0]
@@ -573,9 +609,9 @@ class FrmLancamentos(tk.Toplevel):
         self.cpf_pessoa = self.dados_consulta[3]
         self.edt_pessoa.insert(0, self.dados_consulta[4])
         self.edt_data_venc.insert(0, self.desc_dvenc if self.dados_consulta[5] == 'None'
-                                  else converter_formato_data(self.dados_consulta[5]))
+        else converter_formato_data(self.dados_consulta[5]))
         self.edt_data_pgto.insert(0, self.desc_dpgto if self.dados_consulta[6] == 'None'
-                                  else converter_formato_data(self.dados_consulta[6]))
+        else converter_formato_data(self.dados_consulta[6]))
         self.edt_numero.insert(0,  self.desc_numero if self.dados_consulta[7] == 'None' else self.dados_consulta[7])
         self.edt_descricao.insert(0, self.dados_consulta[8])
         self.id_transf = self.dados_consulta[9]
@@ -589,8 +625,11 @@ class FrmLancamentos(tk.Toplevel):
     def preencher_descricao_foco_out_edt_conta(self, event):
         if self.edt_conta.get() == "":
             self.edt_conta.insert(0, self.desc_conta)
+            self.id_conta = 0
         else:
             self.pesquisar_atribuir_conta_origem()
+
+        self.atualizar_treeview()
 
     def limpar_sob_foco_in_edt_pessoa(self, event):
         if self.edt_pessoa.get() == self.desc_pessoa:
@@ -599,9 +638,11 @@ class FrmLancamentos(tk.Toplevel):
     def preencher_descricao_foco_out_edt_pessoa(self, event):
         if self.edt_pessoa.get() == "":
             self.edt_pessoa.insert(0, self.desc_pessoa)
+            self.cpf_pessoa = ""
         else:
             self.pesquisar_atribuir_pessoa()
-            self.atualizar_treeview()
+
+        self.atualizar_treeview()
 
     def limpar_sob_foco_in_edt_data_venc(self, event):
         if self.edt_data_venc.get() == self.desc_dvenc:
@@ -648,6 +689,7 @@ class FrmLancamentos(tk.Toplevel):
     def preencher_descricao_foco_out_edt_transferencia(self, event):
         if self.edt_transferencia.get() == "":
             self.edt_transferencia.insert(0, self.desc_transf)
+            self.id_transf = 0
         else:
             self.pesquisar_atribuir_conta_destino()
 
@@ -668,10 +710,10 @@ class FrmLancamentos(tk.Toplevel):
                 self.id_conta = int(dado[0][0])
                 self.edt_conta.delete(0, 'end')
                 self.edt_conta.insert(0, dado[0][1])
-                self.lanc_padra_conta = dado[0][2]
+                self.lanc_padrao_conta = dado[0][2]
             else:
                 self.id_conta = 0
-                self.lanc_padra_conta = ''
+                self.lanc_padrao_conta = ''
 
                 if askyesno("Atenção", "Deseja cadastrar a conta %s" % self.edt_conta.get()):
                     contas = FrmContas(self, self.contas)
@@ -750,8 +792,8 @@ class FrmLancamentos(tk.Toplevel):
     def pesquisar_atribuir_conta_destino(self):
         if self.edt_transferencia.get() != self.desc_transf:
             dado = self.pesquisar(self.contas, 'id', 'descricao',
-                                  filtro="descricao ILIKE '%%%s%%' and lancamento_padrao <> '%s'" %
-                                         (self.edt_transferencia.get(), self.lanc_padra_conta),
+                                  filtro="descricao ILIKE '%%%s%%' and id <> '%s'" %
+                                         (self.edt_transferencia.get(), self.id_conta),
                                   quantidade=(1,))
             # print(bd_contas.dml)
             if dado:
@@ -836,19 +878,24 @@ class FrmPessoas(tk.Toplevel):
         # Botões
         self.btn_salvar = ttk.Button(frame, text="Salvar")
         self.btn_salvar.place(x=10, y=130, width=100, height=30)
-        self.btn_salvar.bind('<Button-1>', self.salvar)
 
         self.btn_limpar = ttk.Button(frame, text="Limpar")
         self.btn_limpar.place(x=120, y=130, width=100, height=30)
-        self.btn_limpar.bind('<Button-1>', self.limpar)
 
         self.btn_excluir = ttk.Button(frame, text="Excluir")
         self.btn_excluir.place(x=230, y=130, width=100, height=30)
-        self.btn_excluir.bind('<Button-1>', self.excluir)
 
         self.btn_consultar = ttk.Button(frame, text="Consultar")
         self.btn_consultar.place(x=340, y=130, width=100, height=30)
+
+        self.btn_salvar.bind('<Button-1>', self.salvar)
+        self.btn_salvar.bind('<space>', self.salvar)
+        self.btn_limpar.bind('<Button-1>', self.limpar)
+        self.btn_limpar.bind('<space>', self.limpar)
+        self.btn_excluir.bind('<Button-1>', self.excluir)
+        self.btn_excluir.bind('<space>', self.excluir)
         self.btn_consultar.bind('<Button-1>', self.consultar)
+        self.btn_consultar.bind('<space>', self.consultar)
 
         self.transient(root)
         self.focus_force()
@@ -990,11 +1037,14 @@ class FrmPessoas(tk.Toplevel):
 class FrmConsultas(tk.Toplevel):
     """ Formulário genérico para consultas. """
     def __init__(self, root, origem: Tabela, *campos, **kfiltro):
+        # FrmConsultas(self, self.contas, 'id', 'descricao', 'conta_pai', 'lancamento_padrao', 'data_inclusao',
+        #             id='= %s', descricao="ILIKE '%%%s%%'", lancamento_padrao="= '%s'")
         """ Construtor.
         Elaboração da TreeView baseado em <http://pt.stackoverflow.com/questions/23053/ajuda-tables-python27>
         :param root: Formulário pai.
         :param origem: Tabela que se deseja consultar.
         :param campos: Campos em forma de valores de parametros que serão exibidos na TreeView.
+        :param kfiltro: Filtros que serão empregados na consulta.
         Obs: Deve-se declarar no formulário pai: um atributo self.dados_consulta = [] e
         um método self.carregar_dados(self): ..., que tem que atribuir os componentes do formulario pai
         os mesmos valores informados no parametro campos do contrutor de FrmConsultas(). """
@@ -1020,7 +1070,6 @@ class FrmConsultas(tk.Toplevel):
         # Elementos do formulário.
         self.edt_pesquisa = ttk.Entry(frame)
         self.edt_pesquisa.place(x=10, y=10, width=400, height=30)
-        self.edt_pesquisa.bind('<Return>', self.pesquisar)
 
         self.cbx_filtro = ttk.Combobox(frame, state='readonly')
         self.cbx_filtro.place(x=420, y=10, width=100, height=30)
@@ -1030,7 +1079,6 @@ class FrmConsultas(tk.Toplevel):
 
         self.btn_pesquisar = ttk.Button(frame, text='Pesquisar')
         self.btn_pesquisar.place(x=530, y=10, width=100, height=30)
-        self.btn_pesquisar.bind('<Button-1>', self.pesquisar)
 
         # treeview -> "grid"
         self.dataCols = self.consulta.campos
@@ -1052,7 +1100,10 @@ class FrmConsultas(tk.Toplevel):
         # Insere cada item dos dados
         self.alimentar_treeview()
 
+        self.edt_pesquisa.bind('<Return>', self.pesquisar)
         self.tree.bind('<Double-1>', self.carregar_dados)
+        self.btn_pesquisar.bind('<Button-1>', self.pesquisar)
+        self.btn_pesquisar.bind('<space>', self.pesquisar)
 
         self.transient(root)
         self.focus_force()

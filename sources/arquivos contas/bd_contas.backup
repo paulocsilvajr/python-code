@@ -1,0 +1,362 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 9.5.2
+-- Dumped by pg_dump version 9.5.2
+
+-- Started on 2016-07-12 12:40:45 BRT
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 1 (class 3079 OID 12397)
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- TOC entry 2178 (class 0 OID 0)
+-- Dependencies: 1
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET search_path = public, pg_catalog;
+
+--
+-- TOC entry 554 (class 1247 OID 16467)
+-- Name: lanc_padrao; Type: DOMAIN; Schema: public; Owner: paulo
+--
+
+CREATE DOMAIN lanc_padrao AS character(1) NOT NULL DEFAULT 'c'::bpchar
+	CONSTRAINT lanc_padrao_check CHECK (((VALUE = 'c'::bpchar) OR (VALUE = 'd'::bpchar)));
+
+
+ALTER DOMAIN lanc_padrao OWNER TO paulo;
+
+--
+-- TOC entry 199 (class 1255 OID 16598)
+-- Name: inserir_lancamento(integer, character, date, date, character varying, character varying, integer, numeric, boolean); Type: FUNCTION; Schema: public; Owner: paulo
+--
+
+CREATE FUNCTION inserir_lancamento(id_conta integer, cpf character, data_vencimento date, data_pagamento date, numero character varying, descricao character varying, transferencia integer, lancamento numeric, padrao boolean) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+ DECLARE
+ 	tipo CHAR(1);
+ 	var_id_origem INT;
+ BEGIN
+ 	if padrao = TRUE THEN
+ 		tipo := (SELECT lancamento_padrao FROM contas WHERE id = id_conta);
+ 		IF tipo = 'd' THEN
+ 			lancamento := -lancamento;
+ 		END IF;
+ 	END IF;
+	
+	INSERT INTO lancamentos(
+		id_conta,
+		cpf,
+		data_vencimento,
+		data_pagamento,
+		numero,
+		descricao,
+		transferencia,
+		lancamento
+	) VALUES (
+		id_conta,
+		cpf,
+		data_vencimento,
+		data_pagamento,
+		numero,
+		descricao,
+		transferencia,
+		lancamento);
+
+	var_id_origem := (SELECT MAX(id) FROM lancamentos);
+	INSERT INTO lancamentos(
+		id_conta,
+		cpf,
+		data_vencimento,
+		data_pagamento,
+		numero,
+		descricao,
+		transferencia,
+		lancamento,
+		id_origem
+	) VALUES (
+		transferencia,
+		cpf,
+		data_vencimento,
+		data_pagamento,
+		numero,
+		descricao,
+		id_conta,
+		-lancamento,
+		var_id_origem);
+
+	UPDATE lancamentos 
+	SET id_origem = (var_id_origem + 1)
+	WHERE id = var_id_origem;
+END;
+$$;
+
+
+ALTER FUNCTION public.inserir_lancamento(id_conta integer, cpf character, data_vencimento date, data_pagamento date, numero character varying, descricao character varying, transferencia integer, lancamento numeric, padrao boolean) OWNER TO paulo;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- TOC entry 182 (class 1259 OID 16493)
+-- Name: contas; Type: TABLE; Schema: public; Owner: paulo
+--
+
+CREATE TABLE contas (
+    id integer NOT NULL,
+    descricao character varying(100) NOT NULL,
+    data_inclusao timestamp without time zone DEFAULT now() NOT NULL,
+    conta_pai integer,
+    lancamento_padrao lanc_padrao
+);
+
+
+ALTER TABLE contas OWNER TO paulo;
+
+--
+-- TOC entry 181 (class 1259 OID 16491)
+-- Name: contas_id_seq; Type: SEQUENCE; Schema: public; Owner: paulo
+--
+
+CREATE SEQUENCE contas_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE contas_id_seq OWNER TO paulo;
+
+--
+-- TOC entry 2179 (class 0 OID 0)
+-- Dependencies: 181
+-- Name: contas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: paulo
+--
+
+ALTER SEQUENCE contas_id_seq OWNED BY contas.id;
+
+
+--
+-- TOC entry 185 (class 1259 OID 16518)
+-- Name: lancamentos; Type: TABLE; Schema: public; Owner: paulo
+--
+
+CREATE TABLE lancamentos (
+    id integer NOT NULL,
+    id_conta integer NOT NULL,
+    cpf character(14) NOT NULL,
+    data_vencimento date,
+    data_pagamento date DEFAULT now(),
+    numero character varying(25),
+    descricao character varying(100) NOT NULL,
+    transferencia integer NOT NULL,
+    lancamento numeric(9,2),
+    data_inclusao timestamp without time zone DEFAULT now() NOT NULL,
+    id_origem integer
+);
+
+
+ALTER TABLE lancamentos OWNER TO paulo;
+
+--
+-- TOC entry 184 (class 1259 OID 16516)
+-- Name: lancamentos_id_seq; Type: SEQUENCE; Schema: public; Owner: paulo
+--
+
+CREATE SEQUENCE lancamentos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE lancamentos_id_seq OWNER TO paulo;
+
+--
+-- TOC entry 2180 (class 0 OID 0)
+-- Dependencies: 184
+-- Name: lancamentos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: paulo
+--
+
+ALTER SEQUENCE lancamentos_id_seq OWNED BY lancamentos.id;
+
+
+--
+-- TOC entry 183 (class 1259 OID 16510)
+-- Name: pessoas; Type: TABLE; Schema: public; Owner: paulo
+--
+
+CREATE TABLE pessoas (
+    cpf character(14) NOT NULL,
+    rg character(12),
+    nome character varying(100),
+    data_inclusao timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE pessoas OWNER TO paulo;
+
+--
+-- TOC entry 186 (class 1259 OID 16578)
+-- Name: vw_lancamento_contas; Type: VIEW; Schema: public; Owner: paulo
+--
+
+CREATE VIEW vw_lancamento_contas AS
+ SELECT lancamentos.id,
+    lancamentos.id_conta,
+    contas.descricao AS descricao_conta,
+    lancamentos.cpf,
+    pessoas.nome,
+    lancamentos.data_vencimento,
+    lancamentos.data_pagamento,
+    lancamentos.numero,
+    lancamentos.descricao,
+    lancamentos.transferencia,
+    ( SELECT contas_1.descricao
+           FROM contas contas_1
+          WHERE (contas_1.id = lancamentos.transferencia)) AS descricao_transferencia,
+        CASE
+            WHEN (lancamentos.lancamento < (0)::numeric) THEN abs(lancamentos.lancamento)
+            ELSE (0)::numeric
+        END AS debito,
+        CASE
+            WHEN (lancamentos.lancamento >= (0)::numeric) THEN lancamentos.lancamento
+            ELSE (0)::numeric
+        END AS credito,
+    lancamentos.data_inclusao
+   FROM ((lancamentos
+     JOIN pessoas ON ((lancamentos.cpf = pessoas.cpf)))
+     JOIN contas ON ((contas.id = lancamentos.id_conta)));
+
+
+ALTER TABLE vw_lancamento_contas OWNER TO paulo;
+
+--
+-- TOC entry 2039 (class 2604 OID 16496)
+-- Name: id; Type: DEFAULT; Schema: public; Owner: paulo
+--
+
+ALTER TABLE ONLY contas ALTER COLUMN id SET DEFAULT nextval('contas_id_seq'::regclass);
+
+
+--
+-- TOC entry 2042 (class 2604 OID 16521)
+-- Name: id; Type: DEFAULT; Schema: public; Owner: paulo
+--
+
+ALTER TABLE ONLY lancamentos ALTER COLUMN id SET DEFAULT nextval('lancamentos_id_seq'::regclass);
+
+
+--
+-- TOC entry 2046 (class 2606 OID 16499)
+-- Name: contas_pkey; Type: CONSTRAINT; Schema: public; Owner: paulo
+--
+
+ALTER TABLE ONLY contas
+    ADD CONSTRAINT contas_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 2050 (class 2606 OID 16525)
+-- Name: lancamentos_pkey; Type: CONSTRAINT; Schema: public; Owner: paulo
+--
+
+ALTER TABLE ONLY lancamentos
+    ADD CONSTRAINT lancamentos_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 2048 (class 2606 OID 16515)
+-- Name: pessoas_pkey; Type: CONSTRAINT; Schema: public; Owner: paulo
+--
+
+ALTER TABLE ONLY pessoas
+    ADD CONSTRAINT pessoas_pkey PRIMARY KEY (cpf);
+
+
+--
+-- TOC entry 2051 (class 2606 OID 16541)
+-- Name: fk_conta_pai; Type: FK CONSTRAINT; Schema: public; Owner: paulo
+--
+
+ALTER TABLE ONLY contas
+    ADD CONSTRAINT fk_conta_pai FOREIGN KEY (conta_pai) REFERENCES contas(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 2052 (class 2606 OID 16526)
+-- Name: fk_cpf; Type: FK CONSTRAINT; Schema: public; Owner: paulo
+--
+
+ALTER TABLE ONLY lancamentos
+    ADD CONSTRAINT fk_cpf FOREIGN KEY (cpf) REFERENCES pessoas(cpf) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 2054 (class 2606 OID 16536)
+-- Name: fk_id_conta; Type: FK CONSTRAINT; Schema: public; Owner: paulo
+--
+
+ALTER TABLE ONLY lancamentos
+    ADD CONSTRAINT fk_id_conta FOREIGN KEY (id_conta) REFERENCES contas(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 2055 (class 2606 OID 16588)
+-- Name: fk_id_origem; Type: FK CONSTRAINT; Schema: public; Owner: paulo
+--
+
+ALTER TABLE ONLY lancamentos
+    ADD CONSTRAINT fk_id_origem FOREIGN KEY (id_origem) REFERENCES lancamentos(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- TOC entry 2053 (class 2606 OID 16531)
+-- Name: fk_id_transferencia; Type: FK CONSTRAINT; Schema: public; Owner: paulo
+--
+
+ALTER TABLE ONLY lancamentos
+    ADD CONSTRAINT fk_id_transferencia FOREIGN KEY (transferencia) REFERENCES contas(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 2177 (class 0 OID 0)
+-- Dependencies: 6
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+-- Completed on 2016-07-12 12:40:46 BRT
+
+--
+-- PostgreSQL database dump complete
+--
+
