@@ -195,6 +195,7 @@ class FrmContas(tk.Toplevel):
         self.btn_excluir.bind('<space>', self.excluir)
         self.btn_consultar.bind('<Button-1>', self.consultar)
         self.btn_consultar.bind('<space>', self.consultar)
+
         # Definição do posicionamento ref. ao form. origem e definição de form. em foco.
         self.transient(root)
         self.focus_force()
@@ -250,7 +251,9 @@ class FrmContas(tk.Toplevel):
         if self.lbl_numero_id['text'] == '0':
             showinfo("Atenção", "Consulte um registro para excluir")
         elif askyesno("Atenção", "Deseja realmente excluir %s" % self.edt_descricao.get()):
-            self.contas.excluir('id = %s' % self.lbl_numero_id['text'])
+            if self.contas.excluir('id = %s' % self.lbl_numero_id['text']) is None:
+                showinfo("Atenção", "Exclusão não realizada:\n"
+                                    "Existem lançamentos referenciando esta conta.")
 
             self.limpar_campos()
 
@@ -269,8 +272,9 @@ class FrmContas(tk.Toplevel):
 
         self.edt_descricao.delete(0, 'end')
 
-        valores = self.contas.consultar('id', 'descricao', 'conta_pai', filtro='id <> %s' %
-                                        self.lbl_numero_id['text']).fetchall()
+        self.contas.consultar('id', 'descricao', 'conta_pai', filtro='id <> %s' %
+                                        self.lbl_numero_id['text'])
+        valores = self.contas.exibir()
         self.default_conta_pai = 'Escolha'  # valores[0]  # Para atribuir o 1° valor como padrão.
         self.cbx_conta_pai['values'] = [':'.join((str(x[0]), x[1], str("" if x[2] is None else x[2])))
                                         for x in valores]
@@ -1025,8 +1029,9 @@ class FrmPessoas(tk.Toplevel):
         if cpf == '' or cpf == self.default_cpf:
             showinfo("Atenção", "Consulte um registro para excluir")
         elif askyesno("Atenção", "Deseja realmente excluir %s" % self.edt_nome.get()):
-            self.pessoas.excluir("cpf = '%s'" % cpf)
-
+            if self.pessoas.excluir("cpf = '%s'" % cpf) is None:
+                showinfo("Atenção", "Exclusão não realizada:\n"
+                                    "Existem lançamentos referenciando esta pessoa")
             self.limpar_campos()
 
     def consultar(self, event):

@@ -83,12 +83,13 @@ class Conexao:
             elif self._dbms in ('postgresql', 'sqlite'):
                 quant = " LIMIT %d OFFSET %d" % (quantidade[1], quantidade[0])
 
-        self._historico_crud("Consultado", tabela, ("filtro: %s,ordenação: %s" % (filtro, ordenacao)))
-
-        return self.executar("SELECT %s FROM %s%s%s%s" % (campos, tabela,
-                                                          (" WHERE " + filtro if filtro else ""),
-                                                          (" ORDER BY " + ordenacao if ordenacao else ""),
-                                                          quant))
+        cursor = self.executar("SELECT %s FROM %s%s%s%s" % (campos, tabela,
+                                                            (" WHERE " + filtro if filtro else ""),
+                                                            (" ORDER BY " + ordenacao if ordenacao else ""),
+                                                            quant))
+        if isinstance(cursor, type(self._cursor)):
+            self._historico_crud("Consultado", tabela, ("filtro: %s,ordenação: %s" % (filtro, ordenacao)))
+        return cursor
 
     def inserir(self, tabela: str, campos: str, valores: str):
         """ Função para inserir registros ao BD.
@@ -100,9 +101,10 @@ class Conexao:
         assert isinstance(campos, str), "Formato do parâmetro campos inválido"
         assert isinstance(valores, str), "Formato do parâmetro valores inválido"
 
-        self.executar("INSERT INTO %s(%s) VALUES(%s)" % (tabela, campos, valores))
+        cursor = self.executar("INSERT INTO %s(%s) VALUES(%s)" % (tabela, campos, valores))
 
-        self._historico_crud("Inserido", tabela, "%s = %s" % (campos, valores))
+        if isinstance(cursor, type(self._cursor)):
+            self._historico_crud("Inserido", tabela, "%s = %s" % (campos, valores))
 
     def excluir(self, tabela: str, filtro: str):
         """ Função para apagar registros de tabela do BD.
@@ -112,9 +114,10 @@ class Conexao:
         assert isinstance(tabela, str), "Formato do parâmetro tabela inválido"
         assert isinstance(filtro, str), "Formato do parâmetro filtro inválido"
 
-        self.executar("DELETE FROM %s WHERE %s" % (tabela, filtro))
+        cursor = self.executar("DELETE FROM %s WHERE %s" % (tabela, filtro))
 
-        self._historico_crud("Excluído", tabela, filtro)
+        if isinstance(cursor, type(self._cursor)):
+            self._historico_crud("Excluído", tabela, filtro)
 
     def atualizar(self, tabela: str, campos: str, valores: str, filtro=""):
         """ Função para modificar registro de tabela do BD.
@@ -135,9 +138,10 @@ class Conexao:
             for i in range(len(campos)):
                 elementos += "%s=%s%s" % (campos[i], valores[i], (", " if i < len(campos) - 1 else ""))
 
-            self.executar("UPDATE %s SET %s%s" % (tabela, elementos, (" WHERE " + filtro if filtro else "")))
+            cursor = self.executar("UPDATE %s SET %s%s" % (tabela, elementos, (" WHERE " + filtro if filtro else "")))
 
-            self._historico_crud("Atualizado", tabela, filtro)
+            if isinstance(cursor, type(self._cursor)):
+                self._historico_crud("Atualizado", tabela, filtro)
 
     def criar_tabela(self, nome: str, campos: str):
         """ Função para criação de tabelas no BD conectado.
@@ -150,8 +154,9 @@ class Conexao:
         self.executar("CREATE TABLE %s(%s)" % (nome, campos))
 
     def executar(self, dml: str, autocommit=True):
-        """ Função base para execução de SQL no BD.
+        """ Função base para execução de SQL no BD. Caso ocorra alguns erro na transação, é invocado rollback.
         :param dml: string: intrução SQL.
+        :param autocommit: Confirmação de transação das informações.
         :return: retorna self._conexao.cursor(), caso a instrução SQL for válida,
         ou exc_info: informações da execução, caso contrário. """
         try:
@@ -162,11 +167,12 @@ class Conexao:
                 self._conexao.commit()
             return self._cursor
         except self._excecao:
-            print(exc_info()[1])
-            return exc_info()
+            self._conexao.rollback()
+            print(*exc_info())
+            return None
 
-    # Criar procedure/function no PostgreSQL para testar
     def executar_procedure(self, dml: str, parametros=""):
+        """ Método específico para SGBD PostgreSQL. """
         assert isinstance(dml, str), "Formato do parâmetro dml inválido"
 
         if self._dbms == 'postgresql':
@@ -176,6 +182,7 @@ class Conexao:
         return None
 
     def mensagem_status(self):
+        """ Método específico para SGBD PostgreSQL. """
         if self._dbms == 'postgresql':
             return self._cursor.statusmessage
         return None
@@ -190,8 +197,7 @@ class Conexao:
 
     def descricao(self):
         """ Função base para a função descrição campos.
-        :return: Lista contendo descrições do cursor
-        """
+        :return: Lista contendo descrições do cursor. """
         return self._cursor.description
 
     def descricao_campos(self):
@@ -218,8 +224,8 @@ class Conexao:
         else:
             for i, e in enumerate(self._historico_acoes.exibir()):
                 msg += "%d: %s\n" % (i+1, e)
-        if self._gerar_historico:
-            print(msg)
+        # if self._gerar_historico:
+        #     print(msg)
         return msg
 
     def _historico_crud(self, acao: str, tabela: str, filtro=""):
