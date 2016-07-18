@@ -16,12 +16,17 @@ __author__ = "Paulo C. Silva Jr"
 
 class Pilha:
     """ FILO - First In Last Out. """
+    # Atributo estático da classe.
+    quantidade = 0
     def __init__(self, *itens):
         """ Construtor da classe.
         Possibilita a inclusão de itens na criação do objeto. """
         self._elementos = []
         if itens:
             self._adicionar_elementos(itens)
+
+        # Incremento ao atribuito estático, contando a quantidade de instâncias do classe Pilha.
+        Pilha.quantidade += 1
 
     def _adicionar_elementos(self, elementos):
         for x in elementos:
@@ -154,47 +159,69 @@ class Tabela:
 
 
 class Temporizador(Thread):
-    def __init__(self, funcao, horario: str = "", **kparametro):
+    def __init__(self, horario: str, funcao: object, *args, **kwargs):
         """ Temporizador de função em horários definidos. Cada execução da função é feita por uma thread própria.
-        :param funcao: nome da função que será executado nos horários definidos.
         :param horario: string contendo os horários gatilho.
         Formatos: hh:mm:ss ou dd/mm/yyyy hh:mm:ss ou +1h ou +1m ou +1s
-        :param kparametro: parametros da função. Deve ser informado nomeparametro=valor, n... """
+        :param funcao: nome da função que será executado nos horários definidos.
+        :param args: parametros da função, separados por virgula.
+        :param kwargs: parametros(em formato chave=valor) da função. Deve ser informado nomeparametro=valor, n...
+        :param formato: Opcional. Formato do horário informado: 'AM', 'PM', '24hs(default). '
+        :param completo: Opcional. Se True, o horário deve ser no formato dd/mm/yyyy hh:mm:ss. """
         assert isinstance(funcao, object), "Formato do parâmetro funcao inválido"
         assert isinstance(horario, str), "Formato do parâmetro horario inválido"
 
         self._lista_horario = Fila()
         self.funcao = funcao
-        self.kparametro = kparametro
+        self.parametro = args
+        self.kparametro = kwargs
 
         if horario:
-            self.adicionar_horario(horario)
+            param = {}
+            if 'formato' in self.kparametro.keys():
+                param['formato'] = self.kparametro['formato']
+                self.kparametro.pop('formato')
+            if 'completo' in self.kparametro.keys():
+                param['completo'] = self.kparametro['completo']
+                self.kparametro.pop('completo')
+
+            if not self._adicionar_horario(horario, **param):
+                raise Exception("Formato de horário inválido. ")
         Thread.__init__(self)
 
-    def adicionar_horario(self, horario: str, formato="24hs", completo=False) -> None:
+        # Inicialização da thread.
+        self.start()
+        self.join()
+
+    def _adicionar_horario(self, horario: str, formato="24hs", completo=False) -> None:
         """ Inclusão do(s) horário(s) gatilho do temporizador.
         :param horario: Horario(s). Separador por ',' caso seja informado em plural.
         :param formato: Definição do formato do horário: AM, PM ou 24hs(default).
         :param completo: Formato da horário. Caso True o formato deve ser 'dd/mm/yyyy hh:mm:ss', se não, 'hh:mm:ss'.
         Pode-se omitir os segundos.
         :return: None. """
-        if "+" in horario:
-            # Validação para execução por acrescimo de tempo(h, m, s)
-            agora = datetime.now()
-            if "h" in horario:
-                n = int(horario.replace("+", "").replace("h", ""))
-                horario = agora + timedelta((1/24)*n)
-            elif "m" in horario:
-                n = int(horario.replace("+", "").replace("m", ""))
-                horario = agora + timedelta(((1/24)/60)*n)
-            elif "s" in horario:
-                n = int(horario.replace("+", "").replace("s", ""))
-                horario = agora + timedelta((((1/24)/60)/60)*n)
+        try:
+            if "+" in horario:
+                # Validação para execução por acrescimo de tempo(h, m, s)
+                agora = datetime.now()
+                if "h" in horario:
+                    n = int(horario.replace("+", "").replace("h", ""))
+                    horario = agora + timedelta((1/24)*n)
+                elif "m" in horario:
+                    n = int(horario.replace("+", "").replace("m", ""))
+                    horario = agora + timedelta(((1/24)/60)*n)
+                elif "s" in horario:
+                    n = int(horario.replace("+", "").replace("s", ""))
+                    horario = agora + timedelta((((1/24)/60)/60)*n)
 
-            self._lista_horario.incluir(horario)
-        else:
-            for i in converter_string_data(horario, formato, completo):
-                self._lista_horario.incluir(i)
+                self._lista_horario.incluir(horario)
+            else:
+                for i in converter_string_data(horario, formato, completo):
+                    self._lista_horario.incluir(i)
+
+            return True
+        except ValueError or IndexError:
+            return False
 
     # Override
     def run(self):
@@ -204,6 +231,7 @@ class Temporizador(Thread):
             sleep(1)
             agora = datetime.now()
 
+            # Teste de resposta da thread
             # print("Esperando...", self._lista_horario[0], "- agora:", agora)
 
             if agora.year == self._lista_horario[0].year and \
@@ -214,8 +242,8 @@ class Temporizador(Thread):
                     agora.second == self._lista_horario[0].second:
                 self._lista_horario.remover()
 
-                if self.kparametro is not None:
-                    th = Thread(target=self.funcao, kwargs=self.kparametro)
+                if self.kparametro is not None or self.parametro is not None:
+                    th = Thread(target=self.funcao, args=self.parametro, kwargs=self.kparametro)
                 else:
                     th = Thread(target=self.funcao)
                 th.start()
@@ -226,99 +254,9 @@ class Temporizador(Thread):
                 break
 
 
-def temporizador(*args, **kwargs):
-    """ Função para chamada da classe Temporizador.
-    parametros: funcao, horario: str = "", **kparametro
-    :return: None. """
-    t = Temporizador(*args, **kwargs)
-    t.start()
-    t.join()
-
-
-class Cpf:
-    """ Classe CPF. Baseado em <http://www.python.org.br/wiki/VerificadorDeCPF>. Adaptado para Python3. """
-    def __init__(self, cpf):
-        """O argumento cpf pode ser uma string nas formas:
-            12345678910
-            123.456.789-10
-        ou uma lista ou tuple:
-            [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 0]
-            (1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 0) """
-        if isinstance(cpf, str):
-            if not cpf.isdigit():
-                cpf = self.translate(cpf)
-
-        self.cpf = [int(x) for x in cpf]
-
-    @staticmethod
-    def translate(cpf):
-        """ Traduz CPF com os separadores para somente números. """
-        return ''.join(re.findall("\d", cpf))
-
-    def _exceptions(self, cpf):
-        """ Exceções para invalidação de CPF. """
-        if len(cpf) != 11:
-            return True
-        else:
-            s = ''.join(str(x) for x in cpf)
-            if s == '00000000000' or s == '11111111111' or s == '22222222222' or s == '33333333333' or \
-                            s == '44444444444' or s == '55555555555' or s == '66666666666' or \
-                            s == '77777777777' or s == '88888888888' or s == '99999999999':
-                return True
-        return False
-
-    def _gen(self, cpf):
-        """ Gera o próximo dígito do número de CPF. """
-        res = []
-        for i, a in enumerate(cpf):
-            b = len(cpf) + 1 - i
-            res.append(b * a)
-
-        res = sum(res) % 11
-
-        if res > 1:
-            return 11 - res
-        else:
-            return 0
-
-    def __getitem__(self, index):
-        """ Retorna o dígito em index como string. """
-        return self.cpf[index]
-
-    def __repr__(self):
-        """ Retorna uma representação 'real', ou seja, eval(repr(cpf)) == cpf. """
-        return "CPF('%s')" % ''.join(str(x) for x in self.cpf)
-
-    def __eq__(self, other):
-        """Provê teste de igualdade para números de CPF. """
-        return isinstance(other, Cpf) and self.cpf == other.cpf
-
-    def __str__(self):
-        """Retorna uma representação do CPF na forma: 123.456.789-10. """
-        d = iter("..-")
-        s = list(map(str, self.cpf))
-        for i in range(3, 12, 4):
-            s.insert(i, d.next())
-        r = ''.join(s)
-        return r
-
-    def is_valid(self):
-        """Valida o número de cpf. """
-        if self._exceptions(self.cpf):
-            return False
-
-        s = self.cpf[:9]
-        s.append(self._gen(s))
-        s.append(self._gen(s))
-        return s == self.cpf[:]
-
-    def __bool__(self):
-        return self.is_valid()
-
-
 def converter_string_data(horario: str, formato="24hs", completo=False, ordenar=True) -> list:
-    """ Conversão de string em datetime.
-    :param horario: Horario(s). Separador por ',' caso seja informado em plural.
+    """ Conversão de string em datetime. Usado na classe Temporizador.
+    :param horario: Horario(s). Separador por ',' caso seja informado em grupo.
     :param formato: Definição do formato do horário: AM, PM ou 24hs(default).
     :param completo: Formato da horário. Caso True o formato deve ser 'dd/mm/yyyy hh:mm:ss', senão, 'hh:mm:ss'.
     Pode-se omitir os segundos.
@@ -350,6 +288,10 @@ def converter_string_data(horario: str, formato="24hs", completo=False, ordenar=
         else:
             lista_horario[i] = h.split(':')
             hora, minuto = int(lista_horario[i][0]), int(lista_horario[i][1])
+
+            if formato.lower() == 'pm':
+                hora += 12
+
             if len(lista_horario[i]) > 2:
                 segundo = int(lista_horario[i][2])
 
@@ -358,6 +300,87 @@ def converter_string_data(horario: str, formato="24hs", completo=False, ordenar=
     if len(lista_horario) > 1 and ordenar:
         lista_horario.sort()
     return lista_horario
+
+
+class Cpf:
+    """ Classe validadora CPF. Baseado em <http://www.python.org.br/wiki/VerificadorDeCPF>. Adaptado para Python3. """
+    def __init__(self, cpf):
+        """O argumento cpf pode ser uma string nas formas:
+            12345678910
+            123.456.789-10
+        ou uma lista ou tuple:
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 0]
+            (1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 0) """
+        if isinstance(cpf, str):
+            if not cpf.isdigit():
+                cpf = self.translate(cpf)
+
+        self.cpf = [int(x) for x in cpf]
+
+    @staticmethod
+    def translate(cpf):
+        """ Traduz CPF com os separadores para somente números. """
+        return ''.join(re.findall("\d", cpf))
+
+    def _exceptions(self, cpf):
+        """ Exceções para invalidação de CPF. """
+        if len(cpf) != 11:
+            return True
+        else:
+            s = ''.join(str(x) for x in cpf)
+            if s == '00000000000' or s == '11111111111' or s == '22222222222' or s == '33333333333' or \
+               s == '44444444444' or s == '55555555555' or s == '66666666666' or \
+               s == '77777777777' or s == '88888888888' or s == '99999999999':
+                return True
+        return False
+
+    def _gen(self, cpf):
+        """ Gera o próximo dígito do número de CPF. """
+        res = []
+        for i, a in enumerate(cpf):
+            b = len(cpf) + 1 - i
+            res.append(b * a)
+
+        res = sum(res) % 11
+
+        if res > 1:
+            return 11 - res
+        else:
+            return 0
+
+    def __getitem__(self, index):
+        """ Retorna o dígito em index como string. """
+        return self.cpf[index]
+
+    def __repr__(self):
+        """ Retorna uma representação 'real', ou seja, eval(repr(cpf)) == cpf. """
+        return "CPF('%s')" % ''.join(str(x) for x in self.cpf)
+
+    def __eq__(self, other):
+        """ Provê teste de igualdade para números de CPF. """
+        return isinstance(other, Cpf) and self.cpf == other.cpf
+
+    def __str__(self):
+        """ Retorna uma representação do CPF na forma: 123.456.789-10. """
+        d = iter("..-")
+        s = list(map(str, self.cpf))
+        for i in range(3, 12, 4):
+            s.insert(i, d.next())
+        r = ''.join(s)
+        return r
+
+    def is_valid(self):
+        """ Valida o número de cpf. """
+        if self._exceptions(self.cpf):
+            return False
+
+        s = self.cpf[:9]
+        s.append(self._gen(s))
+        s.append(self._gen(s))
+        return s == self.cpf[:]
+
+    def __bool__(self):
+        return self.is_valid()
 
 
 def pausar(mensagem='\nENTER para continuar '):
@@ -483,7 +506,7 @@ def report_event(event):
 
 
 def converter_formato_data(strdata: str, masc_data="{2}/{1}/{0}", sep_data="-") -> str:
-    """ Conversão de data no formato da mascara informado.
+    """ Conversão de data no formato da mascara informada.
     0: ano, 1: mês, 2: ano.
     hora no formato H:M:S"""
     if len(strdata) > 10:
@@ -503,8 +526,10 @@ def converter_formato_data(strdata: str, masc_data="{2}/{1}/{0}", sep_data="-") 
 
 
 def data_atual(completo=True):
+    """ Retorna a data atual em uma tupla contendo uma data no formato datetime e uma string da data. """
     agora = datetime.now()
     return agora, agora.strftime('%d/%m/%Y %H:%M:%S') if completo else agora.strftime('%d/%m/%Y')
+
 
 if __name__ == '__main__':
     # Teste em interface de texto.

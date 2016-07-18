@@ -224,8 +224,6 @@ class Conexao:
         else:
             for i, e in enumerate(self._historico_acoes.exibir()):
                 msg += "%d: %s\n" % (i+1, e)
-        # if self._gerar_historico:
-        #     print(msg)
         return msg
 
     def _historico_crud(self, acao: str, tabela: str, filtro=""):
