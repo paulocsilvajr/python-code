@@ -19,10 +19,12 @@ CREATE TABLE contas(
 ALTER TABLE contas ADD COLUMN lancamento_padrao lanc_padrao;
 
 CREATE TABLE pessoas(
- 	cpf CHAR(14) PRIMARY KEY,
+	cpf CHAR(14) PRIMARY KEY,
  	rg CHAR(12),
  	nome VARCHAR(100),
  	data_inclusao TIMESTAMP NOT NULL DEFAULT now());
+
+ALTER TABLE pessoas ALTER COLUMN nome SET NOT NULL;
 
 CREATE TABLE lancamentos(
  	id SERIAL PRIMARY KEY,

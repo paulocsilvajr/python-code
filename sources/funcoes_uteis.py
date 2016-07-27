@@ -16,7 +16,7 @@ __author__ = "Paulo C. Silva Jr"
 
 class Pilha:
     """ FILO - First In Last Out. """
-    # Atributo estático da classe.
+    # Atributo estático quantificador de instâncias.
     quantidade = 0
     def __init__(self, *itens):
         """ Construtor da classe.
@@ -68,6 +68,10 @@ class Pilha:
 
     def exibir(self):
         """ Retorna os item em uma list. """
+        return self._elementos
+
+    def limpar(self):
+        self._elementos.clear()
         return self._elementos
 
     def __getitem__(self, item):
