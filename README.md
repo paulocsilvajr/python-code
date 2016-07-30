@@ -4,9 +4,12 @@
 O Objetivo desse repositório é apresentar códigos desenvolvidos em Python executando tarefas diversas, procurando usar o conhecimento adquirido no estudo dessa linguagem, proliferando saber pelo compartilhamento. Aberto à correções e melhorias. Obs: Cada módulo contém teste caso seja executado diretamente.
 
 #### Importanto o pacote sources:
-from sources import modulo
+```
+from sources import modulo  # ou
 from sources.modulo import funcao/classe
+```
 
+#### Módulos
 ```
 sources/numeros_romanos: Módulo que implementa uma classe para converter números arábicos em romanos.
 sources/numeros_primos: Módulo que implementa uma classe para gerar números primos.
