@@ -2,6 +2,9 @@
 ### Exemplos de códigos desenvolvidos em Python.
 
 O Objetivo desse repositório é apresentar códigos desenvolvidos em Python executando tarefas diversas, procurando usar o conhecimento adquirido no estudo dessa linguagem, proliferando saber pelo compartilhamento. Aberto à correções e melhorias. Obs: Cada módulo contém teste caso seja executado diretamente.
+Importanto o pacote sources:
+from sources import modulo
+from sources.modulo import funcao/classe
 
 ```
 sources/numeros_romanos: Módulo que implementa uma classe para converter números arábicos em romanos.
