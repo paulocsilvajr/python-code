@@ -18,6 +18,7 @@ sources/funcoes_uteis: Módulo que implementa funções e classes úteis, usado 
 sources/juros.py: Módulo que implementa classes para calculo de juros simples e compostos.
 sources/conexaoDB.py: Módulo com implementação genérica para gerenciamento de banco de dados(MySQL, PostgreSQL, SQLite)
 sources/controle_contas: Módulo com exemplo de uma aplicação para controle de contas pessoais, desenvolvido em Python3.5, PostgreSQL e Tkinter.
+sources/chatter_bot.py: Módulo com exemplo de um simples chatter-bot com capacidade de inserção de novas interações e calculos. Base de dados em SQLite: bd_mensagens.db.
 ```
 
 ###Licença
