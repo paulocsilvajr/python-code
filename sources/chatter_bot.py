@@ -3,6 +3,7 @@
 
 import sqlite3
 import re
+import random
 
 
 class ChatterBot:
@@ -12,13 +13,8 @@ class ChatterBot:
         """ Construtor. """
         self.bd_mensagens = sqlite3.connect('bd_mensagens.db')
 
-        try:
-            self.bd_mensagens.execute('CREATE TABLE mensagem('
-                                      'chave VARCHAR(50) PRIMARY KEY NOT NULL, '
-                                      'valor VARCHAR(50) NOT NULL)')
-            self.bd_mensagens.commit()
-        except sqlite3.OperationalError:
-            pass
+        self.prompt_user = ": "
+        self.prompt_bot = "> "
 
         self.interagir()
 
@@ -28,51 +24,64 @@ class ChatterBot:
         while 1:
             try:
                 # Captura da interação do usuário.
-                msg = input(": ").lower()
+                msg = input(self.prompt_user).lower()
                 # print("<'%s'" % msg)
 
                 # re procurando 1 ou mais numeros não seguidos por uma ou mais letras e espaços.
                 padrao = r'[0-9]+[^a-zA-Z ]+'
                 if re.search(padrao, msg):
-                    print(eval(msg))
+                    print(self.prompt_bot + str(eval(msg)))
                 else:
                     # Recuperação de interações cadastradas no BD.
-                    lista_mensagens = self.bd_mensagens.execute("SELECT chave, valor FROM mensagem").fetchall()
+                    lista_mensagens = self.bd_mensagens.execute("SELECT chave, valor FROM mensagens ORDER BY chave").fetchall()
 
                     if msg == 'ls':
+                        temp = ""
+                        print(self.prompt_bot + "Listagem de comandos disponíveis:")
                         for linha in lista_mensagens:
-                            print(linha[0])
+                            if linha[0] != temp:
+                                print(self.prompt_bot + linha[0])
+                            temp = linha[0]
+
                     elif msg in ('help', 'ajuda'):
-                        print('Digite ls para listar os comandos disponíveis e informe um deles\n'
-                              'ou informe um calculo(ex: 1+1)')
+                        print(self.prompt_bot + 'Digite ls para listar os comandos disponíveis e informe um deles ou\n'
+                              '> Informe um calculo(ex: 1+1) ou\n'
+                              '> Informe =pergunta para cadastrar nova pergunta(use REGEX para acentos, ex: ol[aá])')
                     else:
-                        # Procurando se a interação do usuário encaixa com alguma cadastrada.
-                        resposta = ""
-                        for item in lista_mensagens:
-                            if item[0] in msg:
-                                resposta = item[1]
-                                break
+                        resposta = []
+                        # filtro para cadastro de nova resposta para uma pergunta.
+                        if re.search(r'[=][a-zA-Z]+', msg):
+                            msg = msg[1:]
+                        else:
+                            # Procurando se a interação do usuário encaixa com alguma cadastrada.
+                            for item in lista_mensagens:
+                                # if item[0] in msg: # Substituido por busca por REGEX.
+                                if re.search(item[0], msg):
+                                    resposta.append(item[1])
 
                         # Se tiver resposta,
                         if resposta:
-                            if resposta == "quit":
+                            if resposta[0] == "quit":
                                 break
                             else:
-                                print("> %s" % resposta)
+                                random.shuffle(resposta)
+                                print("%s%s" % (self.prompt_bot, resposta[0]))
                         # Senão, solicita ao usuário o cadastro da resposta para a interação, caso usuário aceite.
                         else:
-                            print("Não sei como interagir\nDeseja cadastrar a interação[S/n]: ", end="")
+                            print("{0}Não sei como interagir\n{1}Deseja cadastrar a interação[S/n]: ".format(
+                                self.prompt_bot, self.prompt_bot), end="")
                             confirmacao = input("").lower()
 
                             if confirmacao == "s":
                                 try:
                                     # Gravação da nova interação no BD.
-                                    self.bd_mensagens.execute("INSERT INTO mensagem(chave, valor)"
-                                                              "VALUES('%s', '%s')" % (msg,
-                                                                                      input("Resposta para '%s': " % msg)))
+                                    self.bd_mensagens.execute("INSERT INTO mensagens(chave, valor)"
+                                                              "VALUES('%s', '%s')" %
+                                                              (msg, input("Resposta para '%s': " % msg)))
                                     self.bd_mensagens.commit()
                                 except sqlite3.OperationalError:
-                                    pass
+                                    print("Problema da gravação do novo registro na tabela mensagens")
+
             # Foi tratado a excessão de interrupção pelo teclado(CTRL+C), por isso deve-se usar 'sair' para fechar.
             except KeyboardInterrupt:
                 pass
@@ -81,6 +90,5 @@ class ChatterBot:
 def main():
     # Declaração de classe anônima.
     ChatterBot()
-
 if __name__ == "__main__":
     main()
