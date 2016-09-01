@@ -7,6 +7,7 @@ from time import sleep
 from threading import Thread
 from datetime import datetime, timedelta
 import re
+import operator
 
 __author__ = "Paulo C. Silva Jr"
 
@@ -50,36 +51,36 @@ class Pilha:
             return self._elementos.pop()
         return False
 
-    def ordenar(self, reverso=False):
+    def ordenar(self, reverso=False, chave=None):
         """ Ordenação de itens homogêneos.
-        Parametro reverso para ordenar lista decrescentemente.
+        :param reverso para ordenar lista decrescentemente.
+        :param chave string:Dicionário, int: lista/tupla; usado para identificar qual
+        será o elemento de ordenação caso os itens da lista sejam lista/tupla/dicionário.
         Default False(crescente).
         Retorna False caso for heterogênea ou vazia. """
         if self._elementos:
             try:
-                if reverso:
-                    self._elementos.sort(reverse=True)
-                else:
-                    self._elementos.sort()
+                self._elementos.sort(reverse=reverso, key=chave if not chave else operator.itemgetter(chave))
                 return True
             except TypeError:
                 pass
         return False
 
     def exibir(self):
-        """ Retorna os item em uma list. """
+        """ Retorna os itens em uma list. """
         return self._elementos
 
     def limpar(self):
+        """ Remove todos os itens. """
         self._elementos.clear()
-        return self._elementos
+        return not bool(self._elementos)
 
     def __getitem__(self, item):
         """ Exibição de _elementos[item]. """
         return self._elementos[item]
 
     def __setitem__(self, key, value):
-        """ Atibuição de value em _elementos[key]. """
+        """ Atribuição de value em _elementos[key]. """
         self._elementos[key] = value
 
     def __bool__(self):

@@ -28,12 +28,15 @@ class ChatterBot:
                 # print("<'%s'" % msg)
 
                 # re procurando 1 ou mais numeros não seguidos por uma ou mais letras e espaços.
-                padrao = r'[0-9]+[^a-zA-Z ]+'
+                # padrao = r'[0-9]+[^a-zA-Z ]+'
+                padrao = r'^[0-9]+\.?[0-9]*([\+\-\/%]|[\*]{1,2})[0-9]+\.?[0-9]*$'
+
                 if re.search(padrao, msg):
                     print(self.prompt_bot + str(eval(msg)))
                 else:
                     # Recuperação de interações cadastradas no BD.
-                    lista_mensagens = self.bd_mensagens.execute("SELECT chave, valor FROM mensagens ORDER BY chave").fetchall()
+                    lista_mensagens = self.bd_mensagens.\
+                        execute("SELECT chave, valor FROM mensagens ORDER BY chave").fetchall()
 
                     if msg == 'ls':
                         temp = ""
@@ -46,12 +49,17 @@ class ChatterBot:
                     elif msg in ('help', 'ajuda'):
                         print(self.prompt_bot + 'Digite ls para listar os comandos disponíveis e informe um deles ou\n'
                               '> Informe um calculo(ex: 1+1) ou\n'
-                              '> Informe =pergunta para cadastrar nova pergunta(use REGEX para acentos, ex: ol[aá])')
+                              '> Informe =pergunta para cadastrar nova pergunta(use REGEX para melhor performance, ex: ol[aá])')
                     else:
                         resposta = []
                         # filtro para cadastro de nova resposta para uma pergunta.
-                        if re.search(r'[=][a-zA-Z]+', msg):
+                        if re.search(r'=.+', msg):
                             msg = msg[1:]
+
+                            for item in lista_mensagens:
+                                if re.search(item[0], msg):
+                                    msg = item[0]
+                                    break
                         else:
                             # Procurando se a interação do usuário encaixa com alguma cadastrada.
                             for item in lista_mensagens:
@@ -80,7 +88,9 @@ class ChatterBot:
                                                               (msg, input("Resposta para '%s': " % msg)))
                                     self.bd_mensagens.commit()
                                 except sqlite3.OperationalError:
-                                    print("Problema da gravação do novo registro na tabela mensagens")
+                                    print(self.prompt_bot + "Ocorreu um problema na gravação da nova integração.")
+                                except sqlite3.IntegrityError:
+                                    print(self.prompt_bot + "Você informou uma integração já cadastrada.")
 
             # Foi tratado a excessão de interrupção pelo teclado(CTRL+C), por isso deve-se usar 'sair' para fechar.
             except KeyboardInterrupt:
@@ -90,5 +100,7 @@ class ChatterBot:
 def main():
     # Declaração de classe anônima.
     ChatterBot()
+
+
 if __name__ == "__main__":
     main()
