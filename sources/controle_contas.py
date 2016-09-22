@@ -8,7 +8,7 @@ try:
     from conexaoDB import Conexao, Tabela
     from funcoes_uteis import report_event, converter_formato_data, Cpf, data_atual
 except ImportError:
-    from sources.conexaoDB import Conexao, Tabela
+    from sources.conexao_db import Conexao, Tabela
     from sources.funcoes_uteis import report_event, converter_formato_data, Cpf, data_atual
 
 import tkinter as tk

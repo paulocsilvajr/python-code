@@ -47,9 +47,11 @@ class ChatterBot:
                             temp = linha[0]
 
                     elif msg in ('help', 'ajuda'):
-                        print(self.prompt_bot + 'Digite ls para listar os comandos disponíveis e informe um deles ou\n'
+                        print(self.prompt_bot +
+                              'Digite ls para listar os comandos disponíveis e informe um deles ou\n'
                               '> Informe um calculo(ex: 1+1) ou\n'
-                              '> Informe =pergunta para cadastrar nova pergunta(use REGEX para melhor performance, ex: ol[aá])')
+                              '> Informe =pergunta para cadastrar nova pergunta(use REGEX para melhor'
+                              ' performance, ex: ol[aá])')
                     else:
                         resposta = []
                         # filtro para cadastro de nova resposta para uma pergunta.
