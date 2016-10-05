@@ -1,5 +1,13 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
+# coding: utf-8
 
-__all__ = ['funcoes_uteis', 'numeros_primos', 'numeros_romanos', 'juros', 'sequencia_fibonacci', 'conexaoDB', 'controle_contas']
+__all__ = ['chatter_bot',
+           'conexao_db',
+           'controle_contas',
+           'funcoes_uteis',
+           'juros',
+           'numeros_primos',
+           'numeros_romanos',
+           'sequencia_fibonacci']
+
 __author__ = "Paulo C. Silva Jr."

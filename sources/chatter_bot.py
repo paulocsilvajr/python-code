@@ -16,6 +16,10 @@ class ChatterBot:
         self.prompt_user = ": "
         self.prompt_bot = "> "
 
+        # Recuperação de interações cadastradas no BD.
+        self.lista_mensagens = self.bd_mensagens.\
+            execute("SELECT chave, valor FROM mensagens ORDER BY chave").fetchall()
+
         self.interagir()
 
     def interagir(self) -> None:
@@ -27,52 +31,56 @@ class ChatterBot:
                 msg = input(self.prompt_user).lower()
                 # print("<'%s'" % msg)
 
-                # re procurando 1 ou mais numeros não seguidos por uma ou mais letras e espaços.
-                # padrao = r'[0-9]+[^a-zA-Z ]+'
+                # re procurando uma calculo matemático formado por um número(inteiro ou decimal(.)) seguido de algum
+                # símbolo de operação matemática(+, -, *, /, **, //) e outro número.
                 padrao = r'^[0-9]+\.?[0-9]*([\+\-\/%]|[\*]{1,2})[0-9]+\.?[0-9]*$'
 
+                # Se é um calculo matemático, que encaixa no padrão.
                 if re.search(padrao, msg):
                     print(self.prompt_bot + str(eval(msg)))
                 else:
-                    # Recuperação de interações cadastradas no BD.
-                    lista_mensagens = self.bd_mensagens.\
-                        execute("SELECT chave, valor FROM mensagens ORDER BY chave").fetchall()
-
+                    # Se a pergunta for ls.
                     if msg == 'ls':
                         temp = ""
+                        # Exibe todos as interações cadastradas. Obs: algumas estão usando REGEX para otimização.
                         print(self.prompt_bot + "Listagem de comandos disponíveis:")
-                        for linha in lista_mensagens:
+                        for linha in self.lista_mensagens:
                             if linha[0] != temp:
                                 print(self.prompt_bot + linha[0])
                             temp = linha[0]
-
+                    # Se a pergunta for help ou ajuda.
                     elif msg in ('help', 'ajuda'):
                         print(self.prompt_bot +
                               'Digite ls para listar os comandos disponíveis e informe um deles ou\n'
                               '> Informe um calculo(ex: 1+1) ou\n'
-                              '> Informe =pergunta para cadastrar nova pergunta(use REGEX para melhor'
+                              '> Informe =pergunta_existente para cadastrar nova resposta(use REGEX para melhor'
                               ' performance, ex: ol[aá])')
+                    # Senão
                     else:
                         resposta = []
-                        # filtro para cadastro de nova resposta para uma pergunta.
-                        if re.search(r'=.+', msg):
+
+                        # Verificação se a entrada do usuário inicia com '=': gera cadastro de nova resposta
+                        # para uma pergunta já existente.
+                        if re.search(r'^=.+', msg):
                             msg = msg[1:]
 
-                            for item in lista_mensagens:
+                            for item in self.lista_mensagens:
                                 if re.search(item[0], msg):
                                     msg = item[0]
                                     break
+                        # Senão
                         else:
                             # Procurando se a interação do usuário encaixa com alguma cadastrada.
-                            for item in lista_mensagens:
-                                # if item[0] in msg: # Substituido por busca por REGEX.
+                            for item in self.lista_mensagens:
                                 if re.search(item[0], msg):
                                     resposta.append(item[1])
 
                         # Se tiver resposta,
                         if resposta:
+                            # Se a resposta for 'quit', para o laço principal, finalizando a aplicação.
                             if resposta[0] == "quit":
                                 break
+                            # Senão, embaralha as respostas referentes a pergunta e exibe a primeira.
                             else:
                                 random.shuffle(resposta)
                                 print("%s%s" % (self.prompt_bot, resposta[0]))
@@ -89,6 +97,11 @@ class ChatterBot:
                                                               "VALUES('%s', '%s')" %
                                                               (msg, input("Resposta para '%s': " % msg)))
                                     self.bd_mensagens.commit()
+
+                                    # toda vez que é salvo uma nova entrada no banco é recapturado os registros do banco.
+                                    self.lista_mensagens = self.bd_mensagens.execute(
+                                        "SELECT chave, valor FROM mensagens ORDER BY chave").fetchall()
+
                                 except sqlite3.OperationalError:
                                     print(self.prompt_bot + "Ocorreu um problema na gravação da nova integração.")
                                 except sqlite3.IntegrityError:
