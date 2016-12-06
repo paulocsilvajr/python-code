@@ -8,6 +8,7 @@ from threading import Thread
 from datetime import datetime, timedelta
 import re
 import operator
+from abc import ABCMeta, abstractmethod
 
 __author__ = "Paulo C. Silva Jr"
 
@@ -15,7 +16,13 @@ __author__ = "Paulo C. Silva Jr"
     Desenvolvido em Python 3.x """
 
 
-class Pilha:
+class TemplateSequenciaElementos(metaclass=ABCMeta):
+    @abstractmethod
+    def remover(self):
+        pass
+
+
+class Pilha(TemplateSequenciaElementos):
     """ FILO - First In Last Out. """
     # Atributo estático quantificador de instâncias.
     _quantidade = 0
