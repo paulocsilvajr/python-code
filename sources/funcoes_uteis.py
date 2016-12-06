@@ -18,7 +18,7 @@ __author__ = "Paulo C. Silva Jr"
 class Pilha:
     """ FILO - First In Last Out. """
     # Atributo estático quantificador de instâncias.
-    quantidade = 0
+    _quantidade = 0
     def __init__(self, *itens):
         """ Construtor da classe.
         Possibilita a inclusão de itens na criação do objeto. """
@@ -27,11 +27,36 @@ class Pilha:
             self._adicionar_elementos(itens)
 
         # Incremento ao atribuito estático, contando a quantidade de instâncias do classe Pilha.
-        Pilha.quantidade += 1
+        # Pilha.quantidade += 1
+        self._incrementar_quantidade()
 
     def _adicionar_elementos(self, elementos):
         for x in elementos:
             self._elementos.append(x)
+
+    @classmethod
+    def _incrementar_quantidade(classe):
+        classe._quantidade += 1
+
+    @classmethod
+    def _decrementar_quantidade(classe):
+        classe._quantidade -= 1
+
+    @classmethod
+    def _retornar_quantidade(classe):
+        return classe._quantidade
+
+    def __del__(self):
+        self._decrementar_quantidade()
+        del self
+
+    @property
+    def quantidade(self):
+        """ Quantidade de instâncias do objeto/classe. """
+        return self._retornar_quantidade()
+
+    def copiar(self):
+        return self._elementos.copy()
 
     def incluir(self, *n):
         """ Método para inclusão de itens.
@@ -41,13 +66,13 @@ class Pilha:
         else:
             self._elementos.append(n)
 
-    def remover(self, metodo=None):
+    def remover(self):
         """ Método para exclusão de item.
-        Remoção do último item incluido.
+        Remoção do último item incluído.
         Retorna o item removido ou False caso vazia. """
         if self._elementos:
-            if metodo == 'FIFO':
-                return self._elementos.pop(0)
+            # if metodo == 'FIFO':
+            #     return self._elementos.pop(0)
             return self._elementos.pop()
         return False
 
@@ -75,13 +100,21 @@ class Pilha:
         self._elementos.clear()
         return not bool(self._elementos)
 
+    def contar_item(self, item):
+        """ Conta a quantidade de ocorrências do item informado. """
+        return self._elementos.count(item)
+
+    def contar_elementos(self):
+        """ Conta a quantidade de elementos. """
+        return len(self._elementos)
+
     def __getitem__(self, item):
         """ Exibição de _elementos[item]. """
         return self._elementos[item]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, chave, valor):
         """ Atribuição de value em _elementos[key]. """
-        self._elementos[key] = value
+        self._elementos[chave] = valor
 
     def __bool__(self):
         """ Caso exista itens em _elementos, retorna True. """
@@ -95,11 +128,16 @@ class Pilha:
 class Fila(Pilha):
     """ FIFO - First In First Out. """
     # Override
-    def remover(self, metodo=None):
-        """ Método para exclusão de itens.
-        Remoção do primeiro item incluido.
+    _quantidade = 0
+
+    # Override
+    def remover(self):
+        """ Método para exclusão de item.
+        Remoção do primeiro item incluído.
         Retorna o item removido ou False caso vazia. """
-        return super().remover('FIFO')
+        if self._elementos:
+            return self._elementos.pop(0)
+        return False
 
 
 class Tabela:
@@ -313,7 +351,7 @@ class Cpf:
         """O argumento cpf pode ser uma string nas formas:
             12345678910
             123.456.789-10
-        ou uma lista ou tuple:
+        ou uma list ou tuple:
             [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 0]
             (1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 0) """
         if isinstance(cpf, str):
@@ -453,6 +491,15 @@ def input_tipo(texto='\t: ', mensagem_erro='\tValor incorreto', tipo='int',
             if mensagem_erro:
                 print(mensagem_erro)
     return n
+
+
+def input_esp(tipo=int, msg='Informe: ', msg_erro='Valor inválido.'):
+    desc_tipo = re.findall(r'\'[a-zA-Z]+\'', str(tipo))[0]
+    msg_erro = (msg_erro + ' Requer um ' + desc_tipo) if msg_erro == 'Valor inválido.' else msg_erro
+    try:
+        return tipo(input(msg))
+    except ValueError:
+        return ValueError(msg_erro)
 
 
 def validar_intervalo(valor, inicio, fim, mensagem_erro='\tValor incorreto', tipo='int'):
