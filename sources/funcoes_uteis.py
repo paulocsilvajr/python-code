@@ -8,7 +8,7 @@ from threading import Thread
 from datetime import datetime, timedelta
 import re
 import operator
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 __author__ = "Paulo C. Silva Jr"
 
@@ -17,70 +17,73 @@ __author__ = "Paulo C. Silva Jr"
 
 
 class TemplateSequenciaElementos(metaclass=ABCMeta):
+    @abstractproperty
+    def quantidade(self):
+        pass
+
     @abstractmethod
     def remover(self):
         pass
 
-
 class Pilha(TemplateSequenciaElementos):
     """ FILO - First In Last Out. """
     # Atributo estático quantificador de instâncias.
-    _quantidade = 0
+    __quantidade = 0
     def __init__(self, *itens):
         """ Construtor da classe.
         Possibilita a inclusão de itens na criação do objeto. """
-        self._elementos = []
+        self.__elementos = []
         if itens:
-            self._adicionar_elementos(itens)
+            self.__adicionar_elementos(itens)
 
         # Incremento ao atribuito estático, contando a quantidade de instâncias do classe Pilha.
         # Pilha.quantidade += 1
-        self._incrementar_quantidade()
+        self.__incrementar_quantidade()
 
-    def _adicionar_elementos(self, elementos):
+    def __adicionar_elementos(self, elementos):
         for x in elementos:
-            self._elementos.append(x)
+            self.__elementos.append(x)
 
     @classmethod
-    def _incrementar_quantidade(classe):
-        classe._quantidade += 1
+    def __incrementar_quantidade(classe):
+        classe.__quantidade += 1
 
     @classmethod
-    def _decrementar_quantidade(classe):
-        classe._quantidade -= 1
+    def __decrementar_quantidade(classe):
+        classe.__quantidade -= 1
 
     @classmethod
-    def _retornar_quantidade(classe):
-        return classe._quantidade
+    def __retornar_quantidade(classe):
+        return classe.__quantidade
 
     def __del__(self):
-        self._decrementar_quantidade()
+        self.__decrementar_quantidade()
         del self
 
     @property
     def quantidade(self):
         """ Quantidade de instâncias do objeto/classe. """
-        return self._retornar_quantidade()
+        return self.__retornar_quantidade()
 
     def copiar(self):
-        return self._elementos.copy()
+        return self.__elementos.copy()
 
     def incluir(self, *n):
         """ Método para inclusão de itens.
         Pode-se fazer inclusão de vários itens simultaneamente. """
         if isinstance(n, tuple):
-            self._adicionar_elementos(n)
+            self.__adicionar_elementos(n)
         else:
-            self._elementos.append(n)
+            self.__elementos.append(n)
 
     def remover(self):
         """ Método para exclusão de item.
         Remoção do último item incluído.
         Retorna o item removido ou False caso vazia. """
-        if self._elementos:
+        if self.__elementos:
             # if metodo == 'FIFO':
             #     return self._elementos.pop(0)
-            return self._elementos.pop()
+            return self.__elementos.pop()
         return False
 
     def ordenar(self, reverso=False, chave=None):
@@ -90,9 +93,9 @@ class Pilha(TemplateSequenciaElementos):
         será o elemento de ordenação caso os itens da lista sejam lista/tupla/dicionário.
         Default False(crescente).
         Retorna False caso for heterogênea ou vazia. """
-        if self._elementos:
+        if self.__elementos:
             try:
-                self._elementos.sort(reverse=reverso, key=chave if not chave else operator.itemgetter(chave))
+                self.__elementos.sort(reverse=reverso, key=chave if not chave else operator.itemgetter(chave))
                 return True
             except TypeError:
                 pass
@@ -100,50 +103,48 @@ class Pilha(TemplateSequenciaElementos):
 
     def exibir(self):
         """ Retorna os itens em uma list. """
-        return self._elementos
+        return self.__elementos
 
     def limpar(self):
         """ Remove todos os itens. """
-        self._elementos.clear()
-        return not bool(self._elementos)
+        self.__elementos.clear()
+        return not bool(self.__elementos)
 
     def contar_item(self, item):
         """ Conta a quantidade de ocorrências do item informado. """
-        return self._elementos.count(item)
+        return self.__elementos.count(item)
 
     def contar_elementos(self):
         """ Conta a quantidade de elementos. """
-        return len(self._elementos)
+        return len(self.__elementos)
 
     def __getitem__(self, item):
         """ Exibição de _elementos[item]. """
-        return self._elementos[item]
+        return self.__elementos[item]
 
     def __setitem__(self, chave, valor):
         """ Atribuição de value em _elementos[key]. """
-        self._elementos[chave] = valor
+        self.__elementos[chave] = valor
 
     def __bool__(self):
         """ Caso exista itens em _elementos, retorna True. """
-        return bool(self._elementos)
+        return bool(self.__elementos)
 
     def __repr__(self):
         """ Impressão do objeto em str. """
-        return str(self._elementos)
+        return str(self.__elementos)
 
 
 class Fila(Pilha):
     """ FIFO - First In First Out. """
-    # Override
-    _quantidade = 0
 
     # Override
     def remover(self):
         """ Método para exclusão de item.
         Remoção do primeiro item incluído.
         Retorna o item removido ou False caso vazia. """
-        if self._elementos:
-            return self._elementos.pop(0)
+        if self.__elementos:
+            return self.__elementos.pop(0)
         return False
 
 
@@ -588,6 +589,30 @@ def data_atual(completo=True):
     """ Retorna a data atual em uma tupla contendo uma data no formato datetime e uma string da data. """
     agora = datetime.now()
     return agora, agora.strftime('%d/%m/%Y %H:%M:%S') if completo else agora.strftime('%d/%m/%Y')
+
+
+def retornar_componentes_tipo(tipos, escopo, imprimir=False):
+    """ Retorna ou imprimi um dicionário de componentes do tipo informado em lista_tipos a partir do parametro escopo.
+    :param tipos: lista, tupla ou objeto único para a filtragem.
+    :param escopo: função vars(), locals() ou globals().
+    :param imprimir: Opcional, quando True, imprimi o resultado do filtro, mas não retorna o dicionários resultante.
+    :return: Dicionário de componentes, caso imprimir seja False.
+    """
+    assert isinstance(tipos, (list, tuple, object)), 'Lista de tipos deve ser um list ou tuple de objetos ou um único objeto'
+    assert isinstance(escopo, dict), 'Escopo deve um dicionário derivado de vars(), locals() ou globals()'
+
+    componentes = escopo
+    lista_comp = []
+
+    for chave in list(componentes.keys()):
+        if isinstance(componentes[chave], tipos):
+            lista_comp.append({chave: componentes[chave]})
+
+    if imprimir:
+        for item in lista_comp:
+            print(item)
+    else:
+        return lista_comp
 
 
 if __name__ == '__main__':
