@@ -7,8 +7,8 @@ try:
     from conexaoDb import *
 except ImportError:
     # Importação para uso pelo pacote sources
-    from sources.funcoes_uteis import *
-    from sources.conexao_db import *
+    from src.funcoes_uteis import *
+    from src.conexao_db import *
 
 # from abc import ABCMeta, abstractmethod
 #

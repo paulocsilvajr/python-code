@@ -67,3 +67,13 @@ if __name__ == "__main__":
     # print("Ordenado:", listagem)
 
     # print("Ordenado:", sorted(listagem), "<built-in>")
+
+    # teste de desempenho efetuado no ipython3 usando função %timeit:
+    # lista base é formada por range(100) embaralhado com a função random.shuffle()
+    # µs = microsegundo = um milionésimo de segundo
+    # src.ordenacao.insert_sort(): '100000 loops, best of 3: 18.1 µs per loop',
+    # src.ordenacao.bubble_sort(): '1000 loops, best of 3: 490 µs per loop',
+    # src.ordenacao.comb_sort(): '10000 loops, best of 3: 137 µs per loop,
+    # src.ordenacao.selection_sort(): '1000 loops, best of 3: 437 µs per loop',
+    # __builtins__.sorted(): '100000 loops, best of 3: 11.4 µs per loop'
+

@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 # coding: utf-8
 
-__all__ = ['chatter_bot',
+__all__ = ['backup',
+           'chatter_bot',
            'conexao_db',
            'controle_contas',
            'funcoes_uteis',

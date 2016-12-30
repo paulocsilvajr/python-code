@@ -6,7 +6,7 @@ try:
     from funcoes_uteis import input_tipo, validar_intervalo, pausar, limpar_tela
 except ImportError:
     # Importação para uso pelo pacote sources
-    from sources.funcoes_uteis import input_tipo, validar_intervalo, pausar, limpar_tela
+    from src.funcoes_uteis import input_tipo, validar_intervalo, pausar, limpar_tela
 
 from math import log10
 

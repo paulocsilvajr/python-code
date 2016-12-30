@@ -6,7 +6,7 @@ try:
     from funcoes_uteis import Fila, Tabela, input_tipo, validar_intervalo, pausar, limpar_tela
 except ImportError:
     # Importação para uso pelo pacote sources
-    from sources.funcoes_uteis import Fila, Tabela, input_tipo, validar_intervalo, pausar, limpar_tela
+    from src.funcoes_uteis import Fila, Tabela, input_tipo, validar_intervalo, pausar, limpar_tela
 
 import mysql.connector  # sudo apt-get install python3-mysql.connector # ou # pip3 install mysql-connector-python
 import psycopg2  # sudo apt-get install python3-psycopg2
