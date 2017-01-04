@@ -16,6 +16,7 @@ src/chatter_bot.py: Módulo com exemplo de um simples chatter-bot com capacidade
 src/conexao_db.py: Módulo com implementação genérica para gerenciamento de banco de dados(MySQL, PostgreSQL, SQLite)
 src/controle_contas: Módulo com exemplo de uma aplicação para controle de contas pessoais, desenvolvido em Python3.5, PostgreSQL e Tkinter.
 src/funcoes_uteis: Módulo que implementa funções e classes úteis, usado nos módulos e testes do pacote src.
+src/iterar: Módulo com exemplo de retorno de carro e uso do módulo argparse para informar parâmetros ao módulo pelo terminal.
 src/juros.py: Módulo que implementa classes para calculo de juros simples e compostos.
 src/numeros_primos: Módulo que implementa uma classe para gerar números primos.
 src/numeros_romanos: Módulo que implementa uma classe para converter números arábicos em romanos.
