@@ -28,7 +28,8 @@ def capturar_argumentos():
     global pasta_backup
     global lista_arquivos
 
-    parser = ArgumentParser(description='Automatização de backup de arquivos')
+    parser = ArgumentParser(description='Automatização de backup de arquivos.'
+                                        'Será necessário permissão de administrador para efetuar o backup.')
     parser.add_argument('-n',
                         action='store',
                         type=str,
@@ -58,15 +59,13 @@ def capturar_argumentos():
 
     if args.pasta_backup:
         temp = args.pasta_backup
-        if args.pasta_backup.startswith('/'):
-            temp = args.pasta_backup.lstrip('/')
+        if temp.startswith('/'):
+            temp = temp.lstrip('/')
         pasta_backup = temp
 
     if args.lista_arquivos:
         temp = args.lista_arquivos.split(',')
         lista_arquivos = temp
-
-    print(args.nome_particao_backup, args.pasta_backup, args.lista_arquivos, lista_arquivos, sep='\n')
 
 
 def testar_variaveis_backup(nome_particao_backup, pasta_backup, lista_arquivos):
