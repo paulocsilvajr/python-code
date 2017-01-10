@@ -9,7 +9,7 @@ from argparse import ArgumentParser
 NOW = datetime.now()
 SIM = ('y', 'Y', 's', 'S')
 
-# variáveis de backup automático
+# variáveis padrão de backup automático
 nome_particao_backup = '/dev/sda5'
 pasta_backup = 'backup'
 lista_arquivos = ('/home/paulo/.vimrc',
@@ -105,7 +105,7 @@ def efetuar_backup(diretorio_backup, lista_arquivos):
 
 def verificar_particao(nome_particao_backup):
     # testando existencia da partição informada
-    return popen('df|grep %s' % nome_particao_backup).readlines()
+    return popen('df|grep {}'.format(nome_particao_backup)).readlines()
 
 
 def extrair_ponto_montagem(verif_particao):
@@ -152,5 +152,7 @@ if __name__ == '__main__':
             verificar_backup_efetuado(diretorio_backup, lista_arquivos)
 
         else:
-            print('NÃO encontrou partição', 'Monte a partição {} ou'.format(nome_particao_backup),
-                  'Modifique a variável interna nome_particao_backup', sep='\n')
+            print('NÃO encontrou partição',
+                  'Monte a partição {} ou'.format(nome_particao_backup),
+                  'Modifique a variável interna nome_particao_backup ou',
+                  'Informe outro dispositivo no parâmetro -n', sep='\n')
