@@ -44,7 +44,7 @@ def confirmar_backup(lista_arquivos):
     global SIM
 
     print('Lista de arquivos/pastas para backup:', *lista_arquivos, sep='\n')
-    return confirmar_mensagem('Fazer backup dos arquivos e pastas apresentados [S/n]: ')
+    return confirmar_mensagem('Fazer backup dos arquivos e pastas apresentados [S/n]? ')
 
 
 def efetuar_backup(diretorio_backup, lista_arquivos):
@@ -70,7 +70,7 @@ def verificar_diretorio_backup(ponto_montagem, pasta_backup):
     global NOW
 
     # verificando existência de pasta de backup, caso for informada
-    diretorio_backup = '{0}/{1}{2:%Y}{2:%m}{2:%d}'.format(ponto_montagem, pasta_backup, NOW)
+    diretorio_backup = '{0}/{2:%Y}{2:%m}{2:%d}_{1}'.format(ponto_montagem, pasta_backup, NOW)
     if path.exists(diretorio_backup):
         return diretorio_backup
     else:
