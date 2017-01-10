@@ -4,6 +4,7 @@
 from os import popen, path
 from subprocess import call
 from datetime import datetime
+from argparse import ArgumentParser
 
 NOW = datetime.now()
 SIM = ('y', 'Y', 's', 'S')
@@ -20,6 +21,52 @@ lista_arquivos = ('/home/paulo/.vimrc',
                   '/home/paulo/NetBeansProjects',
                   '/home/paulo/pc',
                   '/home/paulo/Pictures')
+
+
+def capturar_argumentos():
+    global nome_particao_backup
+    global pasta_backup
+    global lista_arquivos
+
+    parser = ArgumentParser(description='Automatização de backup de arquivos')
+    parser.add_argument('-n',
+                        action='store',
+                        type=str,
+                        dest='nome_particao_backup',
+                        default='',
+                        help='Nome do dispositivo referente a partição para backup(ex: -n /dev/sda1), '
+                             'padrão: {}'.format(nome_particao_backup))
+    parser.add_argument('-p',
+                        action='store',
+                        type=str,
+                        dest='pasta_backup',
+                        default='',
+                        help='Nome da pasta destino para o backup(ex: -p backup), '
+                             'padrão: {}'.format(pasta_backup))
+    parser.add_argument('-a',
+                        action='store',
+                        type=str,
+                        dest='lista_arquivos',
+                        default='',
+                        help='Lista de arquivos para backup(ex: -a unix.txt,linux.sh,darwin.c), '
+                             'padrão: {}'.format(lista_arquivos))
+
+    args = parser.parse_args()
+
+    if args.nome_particao_backup:
+        nome_particao_backup = args.nome_particao_backup
+
+    if args.pasta_backup:
+        temp = args.pasta_backup
+        if args.pasta_backup.startswith('/'):
+            temp = args.pasta_backup.lstrip('/')
+        pasta_backup = temp
+
+    if args.lista_arquivos:
+        temp = args.lista_arquivos.split(',')
+        lista_arquivos = temp
+
+    print(args.nome_particao_backup, args.pasta_backup, args.lista_arquivos, lista_arquivos, sep='\n')
 
 
 def testar_variaveis_backup(nome_particao_backup, pasta_backup, lista_arquivos):
@@ -62,7 +109,7 @@ def verificar_particao(nome_particao_backup):
     return popen('df|grep %s' % nome_particao_backup).readlines()
 
 
-def gerar_ponto_montagem(verif_particao):
+def extrair_ponto_montagem(verif_particao):
     return str(verif_particao[0]).split(' ')[-1][:-1]
 
 
@@ -84,23 +131,27 @@ def verificar_diretorio_backup(ponto_montagem, pasta_backup):
 def verificar_backup_efetuado(diretorio_backup, lista_arquivos):
     print('\n\n')
     for arquivo in lista_arquivos:
+        if arquivo.endswith('/'):
+            arquivo = arquivo.rstrip('/')
         destino = '{}/{}'.format(diretorio_backup, arquivo.split('/')[-1])
         print('{}: {}'.format(destino, 'OK' if path.exists(destino) else 'X'))
 
+if __name__ == '__main__':
+    capturar_argumentos()
 
-testar_variaveis_backup(nome_particao_backup, pasta_backup, lista_arquivos)
+    testar_variaveis_backup(nome_particao_backup, pasta_backup, lista_arquivos)
 
-if confirmar_backup(lista_arquivos):
-    verif_particao = verificar_particao(nome_particao_backup)
-    if verif_particao:
-        ponto_montagem = gerar_ponto_montagem(verif_particao)
+    if confirmar_backup(lista_arquivos):
+        verif_particao = verificar_particao(nome_particao_backup)
+        if verif_particao:
+            ponto_montagem = extrair_ponto_montagem(verif_particao)
 
-        diretorio_backup = verificar_diretorio_backup(ponto_montagem, pasta_backup)
+            diretorio_backup = verificar_diretorio_backup(ponto_montagem, pasta_backup)
 
-        efetuar_backup(diretorio_backup, lista_arquivos)
+            efetuar_backup(diretorio_backup, lista_arquivos)
 
-        verificar_backup_efetuado(diretorio_backup, lista_arquivos)
+            verificar_backup_efetuado(diretorio_backup, lista_arquivos)
 
-    else:
-        print('NÃO encontrou partição', 'Monte a partição {} ou'.format(nome_particao_backup),
-              'Modifique a variável interna nome_particao_backup', sep='\n')
+        else:
+            print('NÃO encontrou partição', 'Monte a partição {} ou'.format(nome_particao_backup),
+                  'Modifique a variável interna nome_particao_backup', sep='\n')
