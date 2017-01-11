@@ -11,6 +11,7 @@ SIM = ('y', 'Y', 's', 'S')
 
 # variáveis padrão de backup automático
 nome_particao_backup = '/dev/sda5'
+ponto_montagem = ''
 pasta_backup = 'backup'
 lista_arquivos = ('/home/paulo/.vimrc',
                   '/home/paulo/backup_vim',
@@ -23,10 +24,17 @@ lista_arquivos = ('/home/paulo/.vimrc',
                   '/home/paulo/Pictures')
 
 
+def remover_caracter_final(texto, caracter='/'):
+    if texto.endswith(caracter):
+        texto = texto.rstrip(caracter)
+    return texto
+
+
 def capturar_argumentos():
     global nome_particao_backup
     global pasta_backup
     global lista_arquivos
+    global ponto_montagem
 
     parser = ArgumentParser(description='Automatização de backup de arquivos.'
                                         'Será necessário permissão de administrador para efetuar o backup.')
@@ -36,7 +44,14 @@ def capturar_argumentos():
                         dest='nome_particao_backup',
                         default='',
                         help='Nome do dispositivo referente a partição para backup(ex: -n /dev/sda1), '
-                             'padrão: {}'.format(nome_particao_backup))
+                             'padrão: {}. OBS: Captura o ponto de montagem automaticamente, ignorando o parâmetro -m.'.format(nome_particao_backup))
+    parser.add_argument('-m',
+                        action='store',
+                        type=str,
+                        dest='ponto_montagem',
+                        default='',
+                        help='Nome do ponto de montagem referente a partição para backup(ex: -m /media/paulo/bk), '
+                             'padrão: {}'.format(ponto_montagem))
     parser.add_argument('-p',
                         action='store',
                         type=str,
@@ -54,8 +69,14 @@ def capturar_argumentos():
 
     args = parser.parse_args()
 
+    if args.ponto_montagem:
+        temp = remover_caracter_final(args.ponto_montagem)
+        ponto_montagem = temp
+
     if args.nome_particao_backup:
-        nome_particao_backup = args.nome_particao_backup
+        temp = remover_caracter_final(args.nome_particao_backup)
+        nome_particao_backup = temp
+        ponto_montagem = ''
 
     if args.pasta_backup:
         temp = args.pasta_backup
@@ -68,7 +89,7 @@ def capturar_argumentos():
         lista_arquivos = temp
 
 
-def testar_variaveis_backup(nome_particao_backup, pasta_backup, lista_arquivos):
+def testar_variaveis_backup(nome_particao_backup: str, pasta_backup: str, lista_arquivos: tuple):
     # testando formato das variáveis nome_particao_backup e lista_arquivos
     # testando se existe os arquivos/pastas informadas
     assert isinstance(nome_particao_backup, str), 'Formato do nome da partição inválido, requer uma string.'
@@ -80,20 +101,20 @@ def testar_variaveis_backup(nome_particao_backup, pasta_backup, lista_arquivos):
         assert path.exists(i), '{} não existe'.format(i)
 
 
-def confirmar_mensagem(mensagem):
+def confirmar_mensagem(mensagem: str):
     global SIM
 
     return True if input(mensagem)[0] in SIM else False
 
 
-def confirmar_backup(lista_arquivos):
+def confirmar_backup(lista_arquivos: tuple):
     global SIM
 
     print('Lista de arquivos/pastas para backup:', *lista_arquivos, sep='\n')
     return confirmar_mensagem('Fazer backup dos arquivos e pastas apresentados [S/n]? ')
 
 
-def efetuar_backup(diretorio_backup, lista_arquivos):
+def efetuar_backup(diretorio_backup: str, lista_arquivos: tuple):
     for arquivo in lista_arquivos:
         # executando a cópia dos arquivos/pastas informados em lista_arquivos
         if ' ' in arquivo:
@@ -103,16 +124,22 @@ def efetuar_backup(diretorio_backup, lista_arquivos):
         call(comando, shell=True)
 
 
-def verificar_particao(nome_particao_backup):
+def verificar_particao(nome_particao_backup: str):
     # testando existencia da partição informada
-    return popen('df|grep {}'.format(nome_particao_backup)).readlines()
+    if ponto_montagem:
+        return popen('df|grep {}'.format(ponto_montagem)).readlines()
+    else:
+        return popen('df|grep {}'.format(nome_particao_backup)).readlines()
 
 
-def extrair_ponto_montagem(verif_particao):
-    return str(verif_particao[0]).split(' ')[-1][:-1]
+def extrair_ponto_montagem(verif_particao: list):
+    if ponto_montagem:
+        return ponto_montagem
+    else:
+        return str(verif_particao[0]).split(' ')[-1][:-1]
 
 
-def verificar_diretorio_backup(ponto_montagem, pasta_backup):
+def verificar_diretorio_backup(ponto_montagem: str, pasta_backup: str):
     global NOW
 
     # verificando existência de pasta de backup, caso for informada
@@ -127,13 +154,12 @@ def verificar_diretorio_backup(ponto_montagem, pasta_backup):
             raise ValueError('%s não existe' % diretorio_backup)
 
 
-def verificar_backup_efetuado(diretorio_backup, lista_arquivos):
-    print('\n\n')
+def verificar_backup_efetuado(diretorio_backup: str, lista_arquivos: tuple, confirmacao: str='OK', negacao: str='X'):
+    print('\nVerificando arquivos/diretórios copiados:')
     for arquivo in lista_arquivos:
-        if arquivo.endswith('/'):
-            arquivo = arquivo.rstrip('/')
+        arquivo = remover_caracter_final(arquivo)
         destino = '{}/{}'.format(diretorio_backup, arquivo.split('/')[-1])
-        print('{}: {}'.format(destino, 'OK' if path.exists(destino) else 'X'))
+        print('{}: {}'.format(destino, confirmacao if path.exists(destino) else negacao))
 
 if __name__ == '__main__':
     capturar_argumentos()
@@ -152,7 +178,8 @@ if __name__ == '__main__':
             verificar_backup_efetuado(diretorio_backup, lista_arquivos)
 
         else:
+            temp = nome_particao_backup if not ponto_montagem else ponto_montagem
             print('NÃO encontrou partição',
-                  'Monte a partição {} ou'.format(nome_particao_backup),
+                  'Monte a partição {} ou'.format(temp),
                   'Modifique a variável interna nome_particao_backup ou',
-                  'Informe outro dispositivo no parâmetro -n', sep='\n')
+                  'Informe outro dispositivo/partição no parâmetro -n ou -m', sep='\n')
