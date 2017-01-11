@@ -10,7 +10,7 @@ __author__ = "Paulo C. Silva Jr"
 class Timer(Thread):
     def __init__(self):
         self.relogio = 0, 0.0
-        self.min = 1  # 108 default
+        self.min = 108  # 108 default
         self.entrada = []
         self._rodando = True
         self.numeros = ''
