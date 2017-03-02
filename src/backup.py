@@ -30,12 +30,7 @@ def remover_caracter_final(texto, caracter='/'):
     return texto
 
 
-def capturar_argumentos():
-    global nome_particao_backup
-    global pasta_backup
-    global lista_arquivos
-    global ponto_montagem
-
+def capturar_argumentos(nome_particao_backup, pasta_backup, lista_arquivos, ponto_montagem):
     parser = ArgumentParser(description='Automatização de backup de arquivos.'
                                         'Será necessário permissão de administrador para efetuar o backup.')
     parser.add_argument('-n',
@@ -101,17 +96,13 @@ def testar_variaveis_backup(nome_particao_backup: str, pasta_backup: str, lista_
         assert path.exists(i), '{} não existe'.format(i)
 
 
-def confirmar_mensagem(mensagem: str):
-    global SIM
-
-    return True if input(mensagem)[0] in SIM else False
+def confirmar_mensagem(mensagem: str, caracteres_sim):
+    return True if input(mensagem)[0] in caracteres_sim else False
 
 
-def confirmar_backup(lista_arquivos: tuple):
-    global SIM
-
+def confirmar_backup(lista_arquivos: tuple, caracteres_sim):
     print('Lista de arquivos/pastas para backup:', *lista_arquivos, sep='\n')
-    return confirmar_mensagem('Fazer backup dos arquivos e pastas apresentados [S/n]? ')
+    return confirmar_mensagem('Fazer backup dos arquivos e pastas apresentados [S/n]? ', caracteres_sim)
 
 
 def efetuar_backup(diretorio_backup: str, lista_arquivos: tuple):
@@ -139,15 +130,13 @@ def extrair_ponto_montagem(verif_particao: list):
         return str(verif_particao[0]).split(' ')[-1][:-1]
 
 
-def verificar_diretorio_backup(ponto_montagem: str, pasta_backup: str):
-    global NOW
-
+def verificar_diretorio_backup(ponto_montagem: str, pasta_backup: str, horario_atual):
     # verificando existência de pasta de backup, caso for informada
-    diretorio_backup = '{0}/{2:%Y}{2:%m}{2:%d}_{1}'.format(ponto_montagem, pasta_backup, NOW)
+    diretorio_backup = '{0}/{2:%Y}{2:%m}{2:%d}_{1}'.format(ponto_montagem, pasta_backup, horario_atual)
     if path.exists(diretorio_backup):
         return diretorio_backup
     else:
-        if confirmar_mensagem('Criar a pasta de backup {} [S/n]?'.format(diretorio_backup)):
+        if confirmar_mensagem('Criar a pasta de backup {} [S/n]? '.format(diretorio_backup)):
             call('sudo mkdir {}'.format(diretorio_backup), shell=True)
             return diretorio_backup
         else:
@@ -162,16 +151,16 @@ def verificar_backup_efetuado(diretorio_backup: str, lista_arquivos: tuple, conf
         print('{}: {}'.format(destino, confirmacao if path.exists(destino) else negacao))
 
 if __name__ == '__main__':
-    capturar_argumentos()
+    capturar_argumentos(nome_particao_backup, pasta_backup, lista_arquivos, ponto_montagem)
 
     testar_variaveis_backup(nome_particao_backup, pasta_backup, lista_arquivos)
 
-    if confirmar_backup(lista_arquivos):
+    if confirmar_backup(lista_arquivos, SIM):
         verif_particao = verificar_particao(nome_particao_backup)
         if verif_particao:
             ponto_montagem = extrair_ponto_montagem(verif_particao)
 
-            diretorio_backup = verificar_diretorio_backup(ponto_montagem, pasta_backup)
+            diretorio_backup = verificar_diretorio_backup(ponto_montagem, pasta_backup, NOW)
 
             efetuar_backup(diretorio_backup, lista_arquivos)
 
