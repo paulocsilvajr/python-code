@@ -130,13 +130,13 @@ def extrair_ponto_montagem(verif_particao: list):
         return str(verif_particao[0]).split(' ')[-1][:-1]
 
 
-def verificar_diretorio_backup(ponto_montagem: str, pasta_backup: str, horario_atual):
+def verificar_diretorio_backup(ponto_montagem: str, pasta_backup: str, horario_atual, caracteres_sim):
     # verificando existência de pasta de backup, caso for informada
     diretorio_backup = '{0}/{2:%Y}{2:%m}{2:%d}_{1}'.format(ponto_montagem, pasta_backup, horario_atual)
     if path.exists(diretorio_backup):
         return diretorio_backup
     else:
-        if confirmar_mensagem('Criar a pasta de backup {} [S/n]? '.format(diretorio_backup)):
+        if confirmar_mensagem('Criar a pasta de backup {} [S/n]? '.format(diretorio_backup), caracteres_sim):
             call('sudo mkdir {}'.format(diretorio_backup), shell=True)
             return diretorio_backup
         else:
@@ -160,7 +160,7 @@ if __name__ == '__main__':
         if verif_particao:
             ponto_montagem = extrair_ponto_montagem(verif_particao)
 
-            diretorio_backup = verificar_diretorio_backup(ponto_montagem, pasta_backup, NOW)
+            diretorio_backup = verificar_diretorio_backup(ponto_montagem, pasta_backup, NOW, SIM)
 
             efetuar_backup(diretorio_backup, lista_arquivos)
 
