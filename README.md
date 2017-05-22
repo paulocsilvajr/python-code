@@ -26,9 +26,7 @@ src/util: Módulo com funções úteis, complemento e melhoria do funcoes_uteis.
 ```
 
 ###Licença
-
 [Licença GPL](https://github.com/paulocsilvajr/python-code/blob/master/license_gpl.txt), arquivo em anexo no repositório.
 
 ###Contato
-
 Paulo Carvalho da Silva Junior - pauluscave@gmail.com
