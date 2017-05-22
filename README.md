@@ -22,6 +22,7 @@ src/numeros_primos: Módulo que implementa uma classe para gerar números primos
 src/numeros_romanos: Módulo que implementa uma classe para converter números arábicos em romanos.
 src/ordenacao: Módulo com exemplos de funções de ordenação.
 src/sequencia_fibonacci: Módulo que implementa uma classe para gerar sequência de Fibonacci.
+src/util: Módulo com funções úteis, complemento e melhoria do funcoes_uteis.
 ```
 
 ###Licença
