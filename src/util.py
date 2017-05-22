@@ -79,8 +79,18 @@ class RangeStr(RangeX):
         super().__init__(o_v0, o_vn, s)
 
         self._v0, self._vn = v0, vn
+        self._original = self._value
 
-        self._value = (x for x in [chr(v) for v in self._value])
+        # self._value = (x for x in [chr(v) for v in self._value])
+        self._value = self._make_generator(self._original)
+
+    def to_s(self, sep=','):
+        """ Converter em string.
+        :return: str() """
+        return sep.join([str(x) for x in self._make_generator(self._original)])
+
+    def _make_generator(self, r):
+        return (x for x in [chr(v) for v in r])
 
 
 def range_str(*v, s=None):
@@ -106,7 +116,8 @@ if __name__ == '__main__':
     print(r4, r4.to_r(), sep='; ')
 
     r5 = RangeStr('h')
-    print(r5.to_s(), r5.to_s())
+    print(r5, r5.to_s(), sep='; ')
+    print(r5.to_s(''))
 
     r6 = range_str('d', 'l', 2)
     print(r6, list(r6))
