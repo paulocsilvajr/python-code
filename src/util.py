@@ -26,17 +26,17 @@ class RangeX:
 
         self._value = range(self._v0, self._vn + _i, self._s)
 
-    def to_r(self):
+    def to_range(self):
         """ Converter em range().
         :return: range() """
         return self._value
 
-    def to_l(self):
+    def to_list(self):
         """ Converter em lista.
         :return: list() """
         return list(self._value)
 
-    def to_s(self):
+    def to_string(self):
         """ Converter em string.
         :return: str() """
         return ','.join([str(x) for x in self._value])
@@ -52,9 +52,9 @@ class RangeX:
 
 def range_x(*v, s=None):
     if s:
-        return RangeX(*v, s=s).to_r()
+        return RangeX(*v, s=s).to_range()
     else:
-        return RangeX(*v).to_r()
+        return RangeX(*v).to_range()
 
 
 class RangeStr(RangeX):
@@ -83,12 +83,12 @@ class RangeStr(RangeX):
 
         self._value = list(self._make_generator(self._original))
 
-    def to_s(self, sep=','):
+    def to_string(self, sep=','):
         """ Converter em string.
         :return: str() """
         return sep.join([str(x) for x in self._make_generator(self._original)])
 
-    def to_r(self):
+    def to_range(self):
         """ Converte em generator.
         :return: generator """
         return self._make_generator(self._original)
@@ -99,17 +99,17 @@ class RangeStr(RangeX):
 
 def range_str(*v, s=None):
     if s:
-        return RangeStr(*v, s=s).to_r()
+        return RangeStr(*v, s=s).to_range()
     else:
-        return RangeStr(*v).to_r()
+        return RangeStr(*v).to_range()
 
 
 if __name__ == '__main__':
     r1 = RangeX(10)
-    print(r1, r1.to_l(), sep='; ')
+    print(r1, r1.to_list(), sep='; ')
 
     r2 = RangeX(1, 10)
-    print(r2.to_s())
+    print(r2.to_string())
 
     r3 = range_x(2, 10, 2)
     print(r3, list(r3), sep='; ')
@@ -117,11 +117,11 @@ if __name__ == '__main__':
     # print(help(r1))
 
     r4 = RangeStr('a', 'f')
-    print(r4, r4.to_r(), sep='; ')
+    print(r4, r4.to_range(), sep='; ')
 
     r5 = RangeStr('h')
-    print(r5, r5.to_s(), sep='; ')
-    print(r5.to_s(''))
+    print(r5, r5.to_string(), sep='; ')
+    print(r5.to_string(''))
 
     r6 = range_str('d', 'l', 2)
     print(r6, list(r6))
