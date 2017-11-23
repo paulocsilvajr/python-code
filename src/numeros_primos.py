@@ -8,6 +8,8 @@ except ImportError:
     # Importação para uso pelo pacote sources
     from src.funcoes_uteis import input_tipo, validar_intervalo, pausar, limpar_tela
 
+from itertools import count
+
 __author__ = "Paulo C. Silva Jr."
 
 
@@ -22,16 +24,14 @@ class NumeroPrimo:
         assert isinstance(n, int), "Param. n não é inteiro."
         assert n > 0, "Param. n <= 0"
 
-        primo = True
         # Verificação de número primo.
         # Regra: Um número é primo somente se ele for divisível por ele mesmo e por 1.
         if n > 2:
             for x in range(2, n - 1):
                 if n % x == 0:
-                    primo = False
-                    break
+                    return False
 
-        return primo
+        return True
 
     def listar(self, inicial, final):
         """ Retorna uma lista de números primos dentro do intervalo informado(inicial, final). """
@@ -43,24 +43,16 @@ class NumeroPrimo:
         if final < inicial:
             inicial, final = final, inicial
 
-        lista = []
-        for x in range(inicial, final + 1):
-            if self.eh_numero_primo(x):
-                lista.append(x)
-
-        return lista
+        return [x for x in range(inicial, final + 1) if self.eh_numero_primo(x)]
 
     def gerador(self):
         """ Retorna um generator de números primos. """
-        cont = 0
-        while True:
-            cont += 1
-            if self.eh_numero_primo(cont):
-                yield cont
+        for i in count(1):
+            if self.eh_numero_primo(i):
+                yield i
 
     def __repr__(self):
-        conj = str(self._conjunto)[1:-1]
-        return "{" + conj + ",...}"
+        return ', '.join(map(str, self._conjunto))
 
 
 if __name__ == "__main__":
@@ -98,7 +90,7 @@ if __name__ == "__main__":
                 # Exemplo de aplicação do generator de números primos.
                 while True:
                     v = next(g)
-                    print("{}:{}".format(cont, v))
+                    print("{}: {}".format(cont, v))
                     cont += 1
         elif opc == 4:
             print(np)
